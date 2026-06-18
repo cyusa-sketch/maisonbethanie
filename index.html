@@ -340,6 +340,34 @@
     .greeting h1{font-size:23px}
     .chips{display:none}
   }
+  /* ===== notifications ===== */
+  .bell-wrap{position:relative}
+  .bell-badge{position:absolute;top:-3px;right:-3px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:var(--red);color:#fff;font-size:11px;font-weight:800;display:grid;place-items:center;box-shadow:0 0 0 2px var(--bg);animation:pop .3s ease}
+  .notif-panel{position:absolute;top:52px;right:0;width:340px;max-width:86vw;max-height:70vh;overflow-y:auto;background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:0 16px 40px rgba(0,0,0,.22);padding:8px;display:none;z-index:60}
+  .notif-panel.open{display:block;animation:fadeUp .25s ease}
+  .notif-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 8px 10px}
+  .notif{display:flex;gap:11px;padding:11px 9px;border-radius:11px;cursor:pointer;transition:background .12s}
+  .notif:hover{background:#fbf8f3}
+  body.dark .notif:hover{background:#2a261f}
+  .notif .nico{font-size:18px;flex:0 0 auto;width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:#f4efe7}
+  body.dark .notif .nico{background:#2a261f}
+  .notif.alert .nico{background:var(--red-bg)}
+  .notif .ntitle{font-weight:700;font-size:13.5px}
+  .notif .nbody{font-size:12px;color:var(--muted)}
+  .notif-empty{text-align:center;color:var(--muted);font-size:13px;padding:24px 10px}
+
+  /* ===== toasts ===== */
+  #toasts{position:fixed;bottom:18px;right:18px;z-index:120;display:flex;flex-direction:column;gap:10px;max-width:90vw}
+  .toast{display:flex;align-items:flex-start;gap:10px;background:var(--card);color:var(--ink);border:1px solid var(--line);border-left:4px solid var(--gold);border-radius:12px;padding:12px 14px;box-shadow:0 10px 30px rgba(0,0,0,.18);min-width:240px;max-width:340px;animation:toastIn .35s cubic-bezier(.2,1.3,.4,1)}
+  .toast.success{border-left-color:var(--green)} .toast.warn{border-left-color:var(--amber)} .toast.error{border-left-color:var(--red)}
+  .toast .tico{font-size:18px;line-height:1.2}
+  .toast .ttitle{font-weight:700;font-size:14px}
+  .toast .tbody{font-size:12.5px;color:var(--muted);margin-top:2px}
+  .toast.hide{animation:toastOut .3s ease forwards}
+  @keyframes toastIn{from{transform:translateX(120%);opacity:0}to{transform:none;opacity:1}}
+  @keyframes toastOut{to{transform:translateX(120%);opacity:0}}
+  @media(max-width:600px){#toasts{left:12px;right:12px;bottom:12px}.toast{max-width:none}}
+
   /* ===== animated background orbs ===== */
   .bg-orbs{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0}
   .orb{position:absolute;border-radius:50%;filter:blur(64px);opacity:.55;animation:drift 24s ease-in-out infinite}
@@ -395,6 +423,7 @@
 </head>
 <body>
 <div class="bg-orbs" aria-hidden="true"><span class="orb o1"></span><span class="orb o2"></span><span class="orb o3"></span></div>
+<div id="toasts" aria-live="polite"></div>
 <div class="petals" id="petals" aria-hidden="true"></div>
 <div id="confetti" aria-hidden="true"></div>
 <div class="app">
@@ -420,6 +449,13 @@
   </div>
   <div class="top-actions">
     <span id="cloudStatus" title="Cloud sync status" style="font-size:12px;font-weight:700;align-self:center;margin-right:4px;white-space:nowrap">● Local only</span>
+    <div class="bell-wrap">
+      <button class="round light" id="bellBtn" title="Notifications" onclick="toggleNotifs()"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg><span class="bell-badge" id="bellBadge" style="display:none">0</span></button>
+      <div class="notif-panel" id="notifPanel">
+        <div class="notif-head"><b>Notifications</b><button class="linkbtn" id="alertToggle" onclick="enableSystemAlerts()">🔔 Enable alerts</button></div>
+        <div id="notifList"></div>
+      </div>
+    </div>
     <button class="round light" id="themeBtn" title="Toggle dark mode" onclick="toggleTheme()"></button>
     <button class="round light" title="Backup" onclick="exportData()"><svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg></button>
     <button class="round light" title="Restore" onclick="document.getElementById('importFile').click()"><svg viewBox="0 0 24 24"><path d="M12 21V9"/><path d="M7 14l5-5 5 5"/><path d="M5 3h14"/></svg></button>
@@ -632,6 +668,14 @@ async function cloudPull(){
   const {data,error}=await sb.from('weddings').select('id,payload');
   if(error){setCloudStatus('offline');return;}
   DB=(data||[]).map(r=>r.payload);
+  // announce bookings added from another device since last sync
+  if(window._knownIds){
+    DB.filter(w=>!window._knownIds.has(w.id)).forEach(w=>{
+      toast('New booking synced','From another device · '+w.couple+' · '+dateLabel(w),'success');
+      systemNotify('New booking',w.couple+' · '+dateLabel(w));
+    });
+  }
+  window._knownIds=new Set(DB.map(w=>w.id));
   save();refreshAll();setCloudStatus('synced');
 }
 async function initCloud(){
@@ -881,6 +925,10 @@ function openForm(id){
     del.style.display='none';
   }
   toggleMulti();syncEndMin();
+  // stop the date picker from selecting past days (but keep an existing historical date editable)
+  const editId=document.getElementById('f_id').value;
+  const ex=editId?DB.find(x=>x.id===editId):null;
+  document.getElementById('f_date').min=(ex&&ex.date<todayStr())?ex.date:todayStr();
   document.getElementById('payDate').value=todayStr();
   renderPayments();
 }
@@ -930,6 +978,13 @@ function saveBooking(){
   const date=document.getElementById('f_date').value;
   if(!couple){alert('Please enter the couple / client name.');return}
   if(!date){alert('Please enter the wedding date.');return}
+  const id=document.getElementById('f_id').value;
+  // block dates that have already passed (but allow editing a historical booking that already had a past date)
+  const existing=id?DB.find(w=>w.id===id):null;
+  if(date<todayStr()&&!(existing&&existing.date===date)){
+    alert("⛔ You can't book a date that has already passed.\n\nPlease choose today or a future date (a future year's same day is fine).");
+    return;
+  }
   const multi=document.getElementById('f_multi').checked;
   let endDate=multi?document.getElementById('f_end').value:date;
   if(multi){
@@ -937,7 +992,6 @@ function saveBooking(){
     if(endDate<date){alert('The last day cannot be before the start date.');return}
   }
   // warn on double-booking — any overlap with another active booking's date range
-  const id=document.getElementById('f_id').value;
   const status=document.getElementById('f_status').value;
   if(status!=='cancelled'){
     const clash=DB.find(w=>w.id!==id&&w.status!=='cancelled'&&date<=endOf(w)&&endDate>=w.date);
@@ -955,7 +1009,14 @@ function saveBooking(){
   const isNew=!id;
   if(id){DB[DB.findIndex(w=>w.id===id)]=rec}else{DB.push(rec)}
   save();closeForm();refreshAll();cloudUpsert(rec);
-  if(isNew)celebrate();
+  if(window._knownIds)window._knownIds.add(rec.id); // don't re-announce our own booking on next sync
+  if(isNew){
+    toast('New booking added 🎉',rec.couple+' · '+dateLabel(rec),'success');
+    systemNotify('New booking',rec.couple+' · '+dateLabel(rec));
+    celebrate();
+  }else{
+    toast('Booking updated',rec.couple+' · '+dateLabel(rec),'info');
+  }
 }
 function deleteBooking(){
   const id=document.getElementById('f_id').value;
@@ -1012,7 +1073,66 @@ function importData(input){
 }
 
 function escapeHtml(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function refreshAll(){renderDashboard();renderBookings();renderCalendar()}
+function refreshAll(){renderDashboard();renderBookings();renderCalendar();renderNotifs();}
+
+/* ================= NOTIFICATIONS ================= */
+function toast(title,body,type){
+  const box=document.getElementById('toasts');if(!box)return;
+  const icons={success:'🎉',warn:'⚠️',error:'⛔',info:'🔔'};
+  const t=document.createElement('div');t.className='toast '+(type||'info');
+  t.innerHTML='<div class="tico">'+(icons[type]||'🔔')+'</div><div><div class="ttitle">'+escapeHtml(title)+'</div>'+(body?'<div class="tbody">'+escapeHtml(body)+'</div>':'')+'</div>';
+  box.appendChild(t);
+  setTimeout(()=>{t.classList.add('hide');setTimeout(()=>t.remove(),320);},5000);
+}
+
+function buildNotifications(){
+  const today=todayStr(),now=new Date(),active=DB.filter(w=>w.status!=='cancelled'),list=[];
+  const days=w=>Math.ceil((new Date(w.date)-new Date(today))/86400000);
+  active.filter(w=>covers(w,today)&&w.status!=='done').forEach(w=>list.push({alert:true,ico:'💍',title:'Event today: '+w.couple,body:(w.eventType||'Event')+(w.hall?' · '+w.hall:''),id:w.id}));
+  active.filter(w=>w.date>today&&days(w)<=7&&w.status!=='done').sort((a,b)=>a.date.localeCompare(b.date)).forEach(w=>list.push({alert:true,ico:'⏰',title:'In '+days(w)+' day'+(days(w)>1?'s':'')+': '+w.couple,body:dateLabel(w)+(w.hall?' · '+w.hall:''),id:w.id}));
+  active.filter(w=>w.status==='tentative'&&endOf(w)>=today).forEach(w=>list.push({alert:true,ico:'📌',title:'Confirm hold: '+w.couple,body:'Tentative booking · '+dateLabel(w),id:w.id}));
+  active.filter(w=>w.date>=today&&w.status!=='done'&&paid(w)===0&&days(w)<=14).forEach(w=>list.push({alert:true,ico:'💸',title:'No payment yet: '+w.couple,body:'No deposit recorded · '+dateLabel(w),id:w.id}));
+  const curKey=today.slice(0,7);
+  const monthIncome=active.reduce((a,w)=>a+(w.payments||[]).filter(p=>(p.date||'').slice(0,7)===curKey).reduce((x,p)=>x+(+p.amount||0),0),0);
+  list.push({alert:false,ico:'💰',title:now.toLocaleDateString('en-GB',{month:'long'})+' income: '+fmtMoney(monthIncome),body:'Received so far this month'});
+  const upc=active.filter(w=>endOf(w)>=today&&w.status!=='done').length;
+  list.push({alert:false,ico:'📅',title:upc+' upcoming event'+(upc===1?'':'s'),body:'Tap Bookings to see all'});
+  return list;
+}
+function renderNotifs(){
+  const list=buildNotifications(),alerts=list.filter(n=>n.alert).length;
+  const badge=document.getElementById('bellBadge');
+  if(badge){if(alerts>0){badge.style.display='grid';badge.textContent=alerts>9?'9+':alerts;}else{badge.style.display='none';}}
+  const el=document.getElementById('notifList');if(!el)return;
+  el.innerHTML=list.length?list.map(n=>`<div class="notif${n.alert?' alert':''}" ${n.id?`onclick="openForm('${n.id}');toggleNotifs(true)"`:''}><div class="nico">${n.ico}</div><div><div class="ntitle">${escapeHtml(n.title)}</div><div class="nbody">${escapeHtml(n.body||'')}</div></div></div>`).join(''):'<div class="notif-empty">You\'re all caught up 🌸</div>';
+}
+function toggleNotifs(forceClose){
+  const p=document.getElementById('notifPanel');if(!p)return;
+  if(forceClose){p.classList.remove('open');return;}
+  p.classList.toggle('open');
+  if(p.classList.contains('open'))renderNotifs();
+}
+document.addEventListener('click',e=>{if(!e.target.closest('.bell-wrap'))document.getElementById('notifPanel')?.classList.remove('open');});
+
+/* system (OS / phone) pop-up alerts */
+function updateAlertToggle(){
+  const b=document.getElementById('alertToggle');if(!b||!('Notification' in window))return;
+  if(Notification.permission==='granted'){b.textContent='🔔 Alerts on';b.style.opacity=.7;}
+  else if(Notification.permission==='denied'){b.textContent='🔕 Blocked';}
+  else b.textContent='🔔 Enable alerts';
+}
+function enableSystemAlerts(){
+  if(!('Notification' in window)){alert('This device does not support pop-up alerts.');return;}
+  Notification.requestPermission().then(p=>{updateAlertToggle();if(p==='granted')systemNotify('Alerts enabled','You\'ll be notified about new and upcoming events.');});
+}
+function systemNotify(title,body){
+  try{if('Notification' in window&&Notification.permission==='granted')new Notification('Maison Béthanie · '+title,{body:body||'',icon:'icon-192.png',badge:'icon-192.png'});}catch(e){}
+}
+function notifyTodaysEvents(){
+  const today=todayStr();
+  const todays=DB.filter(w=>covers(w,today)&&w.status!=='cancelled'&&w.status!=='done');
+  todays.forEach(w=>{toast('Happening today 💍',w.couple+(w.hall?' · '+w.hall:''),'success');systemNotify('Event today',w.couple+(w.hall?' · '+w.hall:''));});
+}
 
 /* ---------- seed sample data on first run ---------- */
 if(DB.length===0&&!localStorage.getItem(KEY)){
@@ -1075,6 +1195,8 @@ applyTheme(localStorage.getItem('mb_theme')|| (window.matchMedia&&window.matchMe
 initPetals();
 document.getElementById('checkDate').value=todayStr();
 refreshAll();
+updateAlertToggle();
+notifyTodaysEvents();
 initCloud();
 
 /* ---------- PWA: register service worker for offline + install ---------- */
