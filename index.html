@@ -1133,7 +1133,22 @@ function updateAlertToggle(){
 }
 function enableSystemAlerts(){
   if(!('Notification' in window)){alert('This device does not support pop-up alerts.');return;}
-  Notification.requestPermission().then(p=>{updateAlertToggle();if(p==='granted')systemNotify('Alerts enabled','You\'ll be notified about new and upcoming events.');});
+  Notification.requestPermission().then(p=>{updateAlertToggle();if(p==='granted'){systemNotify('Alerts enabled','You\'ll be notified about new and upcoming events.');subscribePush();}});
+}
+
+/* ---------- Web Push: subscribe this device for lock-screen alerts ---------- */
+const VAPID_PUBLIC='BBz7lL3vl9_U8TogakaEN_0kYQt1jflT_oRhft3pKREwWiVMCIOyAHq0HHVIC43KWWglh63vFugv-2VyRHKKSDo';
+function urlB64ToUint8(b){const pad='='.repeat((4-b.length%4)%4);const s=(b+pad).replace(/-/g,'+').replace(/_/g,'/');const raw=atob(s);return Uint8Array.from([...raw].map(c=>c.charCodeAt(0)));}
+async function subscribePush(){
+  if(!sb||!('serviceWorker' in navigator)||!('PushManager' in window))return;
+  if(Notification.permission!=='granted')return;
+  try{
+    const reg=await navigator.serviceWorker.ready;
+    let sub=await reg.pushManager.getSubscription();
+    if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlB64ToUint8(VAPID_PUBLIC)});
+    const j=sub.toJSON();
+    await sb.from('push_subscriptions').upsert({id:sub.endpoint,endpoint:sub.endpoint,subscription:j,last_seen:new Date().toISOString()},{onConflict:'id'});
+  }catch(e){console.warn('push subscribe failed',e);}
 }
 function systemNotify(title,body){
   try{if('Notification' in window&&Notification.permission==='granted')new Notification('Maison Béthanie · '+title,{body:body||'',icon:'icon-192.png',badge:'icon-192.png'});}catch(e){}
@@ -1208,6 +1223,7 @@ refreshAll();
 updateAlertToggle();
 notifyTodaysEvents();
 initCloud();
+if('Notification' in window&&Notification.permission==='granted')setTimeout(subscribePush,1500);
 
 /* ---------- PWA: register service worker for offline + install ---------- */
 if('serviceWorker' in navigator){

@@ -1,5 +1,5 @@
-/* Maison Béthanie service worker — offline support + auto-update */
-const CACHE = 'mb-v2';
+/* Maison Béthanie service worker — offline support + auto-update + push */
+const CACHE = 'mb-v3';
 const ASSETS = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
@@ -11,6 +11,30 @@ self.addEventListener('activate', e => {
     caches.keys()
       .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
       .then(() => self.clients.claim())
+  );
+});
+
+self.addEventListener('push', e => {
+  let data = { title: 'Maison Béthanie', body: '' };
+  try { data = e.data.json(); } catch (_) { if (e.data) data.body = e.data.text(); }
+  e.waitUntil(self.registration.showNotification(data.title || 'Maison Béthanie', {
+    body: data.body || '',
+    icon: 'icon-192.png',
+    badge: 'icon-192.png',
+    tag: data.tag,
+    renotify: !!data.tag,
+    data: { url: data.url || './' }
+  }));
+});
+
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  const target = (e.notification.data && e.notification.data.url) || './';
+  e.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+      for (const c of list) { if ('focus' in c) return c.focus(); }
+      if (clients.openWindow) return clients.openWindow(target);
+    })
   );
 });
 
