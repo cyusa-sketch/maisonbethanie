@@ -5,31 +5,33 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Maison Béthanie — Wedding Bookings</title>
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#5D0D18">
+<meta name="theme-color" content="#2c3a2c">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Béthanie">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#FFF9EB; --card:#FFFDF6; --ink:#2c1d20; --muted:#7f857f;
-    --line:#ece3d2; --gold:#5D0D18; --gold-dark:#470a12;
-    --sage:#9FB2AC; --sage-dark:#6f857d;
-    --green:#4f6b60; --green-bg:#e7ede9; --red:#5D0D18; --red-bg:#f5e3e5;
-    --amber:#8a6320; --amber-bg:#f6ecd6; --shadow:0 1px 3px rgba(45,20,24,.07),0 8px 24px rgba(45,20,24,.06);
+    --bg:#FFF9EB; --card:#FFFDF6; --ink:#23291f; --muted:#7d8276;
+    --line:#e8e3cd; --gold:#2c3a2c; --gold-dark:#22301f;
+    --sage:#d8bd7e; --sage-dark:#a98c4a;
+    --green:#3f6b4f; --green-bg:#e7efe4; --red:#9a2a22; --red-bg:#f6e7e3;
+    --amber:#9a7a2a; --amber-bg:#f6eed6; --shadow:0 1px 3px rgba(30,38,28,.07),0 8px 24px rgba(30,38,28,.06);
   }
   *{box-sizing:border-box}
   body{margin:0;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:var(--ink);font-size:15px;line-height:1.5;
     background:
-      radial-gradient(1200px 600px at 10% -10%, #fff4d6 0%, rgba(255,244,214,0) 55%),
-      radial-gradient(1000px 700px at 110% 0%, #e4ece8 0%, rgba(228,236,232,0) 50%),
-      radial-gradient(900px 700px at 50% 120%, #f0dde0 0%, rgba(240,221,224,0) 55%),
-      linear-gradient(180deg,#FFF9EB,#fbf2dd);
+      radial-gradient(1200px 600px at 10% -10%, #fbedc4 0%, rgba(251,237,196,0) 55%),
+      radial-gradient(1000px 700px at 110% 0%, #e3ecdd 0%, rgba(227,236,221,0) 50%),
+      radial-gradient(900px 700px at 50% 120%, #e9ecd6 0%, rgba(233,236,214,0) 55%),
+      linear-gradient(180deg,#FFF9EB,#f7f0d8);
     background-attachment:fixed;}
   /* faint botanical pattern overlay */
   body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.5;
-    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140' viewBox='0 0 140 140'%3E%3Cg fill='none' stroke='%239FB2AC' stroke-width='1' opacity='0.16'%3E%3Cpath d='M70 30c10 12 10 24 0 36-10-12-10-24 0-36z'/%3E%3Cpath d='M70 30c-10 12-10 24 0 36'/%3E%3Cpath d='M30 100c12 6 24 6 34-2-12-6-24-6-34 2z'/%3E%3Cpath d='M110 100c-12 6-24 6-34-2 12-6 24-6 34 2z'/%3E%3Ccircle cx='70' cy='70' r='2' fill='%239FB2AC' stroke='none'/%3E%3C/g%3E%3C/svg%3E");}
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140' viewBox='0 0 140 140'%3E%3Cg fill='none' stroke='%23708060' stroke-width='1' opacity='0.18'%3E%3Cpath d='M70 30c10 12 10 24 0 36-10-12-10-24 0-36z'/%3E%3Cpath d='M70 30c-10 12-10 24 0 36'/%3E%3Cpath d='M30 100c12 6 24 6 34-2-12-6-24-6-34 2z'/%3E%3Cpath d='M110 100c-12 6-24 6-34-2 12-6 24-6 34 2z'/%3E%3Ccircle cx='70' cy='70' r='2' fill='%23708060' stroke='none'/%3E%3C/g%3E%3C/svg%3E");}
   main,header,nav{position:relative;z-index:1}
   h1,h2,h3{margin:0;font-weight:600}
   button{font-family:inherit;cursor:pointer;border:none}
@@ -38,7 +40,7 @@
   header{background:linear-gradient(120deg,#2b2622,#4a3f34,#2b2622);background-size:200% 200%;animation:headerGlow 14s ease infinite;color:#fff;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;box-shadow:0 6px 20px rgba(43,38,34,.18)}
   @keyframes headerGlow{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
   .brand{display:flex;align-items:center;gap:14px}
-  .logo{position:relative;width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,#7a1320,#5D0D18);display:grid;place-items:center;font-size:22px;font-weight:700;color:#FFF9EB;box-shadow:0 0 0 3px rgba(159,178,172,.45),0 4px 14px rgba(93,13,24,.4);overflow:hidden}
+  .logo{position:relative;width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,#3a4c38,#2c3a2c);display:grid;place-items:center;font-size:22px;font-weight:700;color:#FFF9EB;box-shadow:0 0 0 3px rgba(216,189,126,.5),0 4px 14px rgba(30,38,28,.4);overflow:hidden}
   .logo::after{content:"";position:absolute;top:0;left:-120%;width:60%;height:100%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.6),transparent);transform:skewX(-20deg);animation:shimmer 4.5s ease-in-out infinite}
   @keyframes shimmer{0%,60%{left:-120%}100%{left:130%}}
   .brand h1{font-size:20px;letter-spacing:.5px}
@@ -60,7 +62,7 @@
 
   .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px}
   .stat{position:relative;background:rgba(255,255,255,.82);backdrop-filter:blur(6px);border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:var(--shadow);overflow:hidden;transition:transform .25s ease,box-shadow .25s ease;animation:pop .45s ease both}
-  .stat:hover{transform:translateY(-4px);box-shadow:0 10px 30px rgba(93,13,24,.18)}
+  .stat:hover{transform:translateY(-4px);box-shadow:0 10px 30px rgba(30,38,28,.18)}
   .stat::after{content:"";position:absolute;top:-30px;right:-20px;width:90px;height:90px;border-radius:50%;background:radial-gradient(circle,rgba(212,175,106,.22),transparent 70%)}
   .stat:nth-child(2){animation-delay:.06s}.stat:nth-child(3){animation-delay:.12s}.stat:nth-child(4){animation-delay:.18s}
   .stat .label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
@@ -82,8 +84,8 @@
   .btn.ghost:hover{background:#ece4da}
   .btn.danger{background:var(--red-bg);color:var(--red)}
   .btn.sm{padding:6px 12px;font-size:13px}
-  .btn{transition:transform .15s ease,box-shadow .2s ease,background .2s ease;box-shadow:0 2px 8px rgba(93,13,24,.18)}
-  .btn:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(93,13,24,.28)}
+  .btn{transition:transform .15s ease,box-shadow .2s ease,background .2s ease;box-shadow:0 2px 8px rgba(30,38,28,.18)}
+  .btn:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(30,38,28,.28)}
   .btn:active{transform:translateY(0)}
   .btn.ghost{box-shadow:none}
   .iconbtn{background:#f4efe7;color:var(--ink);border-radius:7px;padding:5px 9px;font-size:14px;margin-left:4px}
@@ -219,7 +221,7 @@
 
   /* past weddings: aged tint + ink-stamp marker */
   tr.row.past td{color:#9a8f86}
-  tr.row.past{background:linear-gradient(0deg,rgba(93,13,24,.05),rgba(93,13,24,.05))}
+  tr.row.past{background:linear-gradient(0deg,rgba(30,38,28,.05),rgba(30,38,28,.05))}
   tr.row.past td[data-label="Date"]{position:relative}
   .stamp{display:inline-block;margin-left:8px;vertical-align:middle;border:2px solid var(--green);color:var(--green);
     font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;padding:2px 7px;border-radius:6px;
@@ -255,19 +257,19 @@
   .flourish{text-align:center;color:var(--gold);opacity:.7;letter-spacing:6px;margin:6px 0 18px;font-size:14px}
   /* ===================== MODERN DASHBOARD SHELL ===================== */
   .app{display:flex;align-items:flex-start;min-height:100vh;position:relative;z-index:1}
-  .sidebar{position:sticky;top:0;height:100vh;width:236px;flex:0 0 236px;background:#5D0D18;color:#e7c7ca;
+  .sidebar{position:sticky;top:0;height:100vh;width:236px;flex:0 0 236px;background:#2c3a2c;color:#d9e0cf;
     padding:20px 14px;display:flex;flex-direction:column;gap:3px;overflow-y:auto;border-radius:0 24px 24px 0;z-index:2}
   .side-brand{display:flex;align-items:center;gap:11px;padding:4px 8px 16px}
-  .side-brand .logo{box-shadow:0 0 0 2px rgba(159,178,172,.45)}
+  .side-brand .logo{box-shadow:0 0 0 2px rgba(216,189,126,.5)}
   .side-brand b{color:#FFF9EB;font-size:18px;letter-spacing:.5px}
-  .side-label{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:#c08b91;margin:16px 12px 6px;font-weight:800}
-  .navitem{display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:13px;color:#eccccf;font-weight:600;
+  .side-label{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:#9aa888;margin:16px 12px 6px;font-weight:800}
+  .navitem{display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:13px;color:#d6dcc9;font-weight:600;
     font-size:14px;cursor:pointer;transition:background .15s,color .15s,transform .15s;background:none;width:100%;text-align:left}
   .navitem .ic{width:20px;height:20px;flex:0 0 auto;display:grid;place-items:center}
   .navitem .ic svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
   .round svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-  .navitem:hover{background:#7a1320;color:#FFF9EB}
-  .navitem.active{background:#9FB2AC;color:#27201f;box-shadow:0 6px 16px rgba(93,13,24,.22)}
+  .navitem:hover{background:#3a4c38;color:#FFF9EB}
+  .navitem.active{background:#d8bd7e;color:#2c2410;box-shadow:0 6px 16px rgba(30,38,28,.22)}
   .side-spacer{flex:1;min-height:14px}
 
   .content{flex:1;min-width:0;display:flex;flex-direction:column;position:relative;z-index:1}
@@ -277,10 +279,10 @@
   .topsearch input:focus{outline:none}
   .chips{display:flex;gap:8px;flex-wrap:wrap}
   .chip{background:#eae2cf;border-radius:30px;padding:8px 15px;font-size:13px;font-weight:700;color:#6a5f52;cursor:pointer;transition:background .15s,color .15s}
-  .chip:hover{background:#5D0D18;color:#FFF9EB}
+  .chip:hover{background:#2c3a2c;color:#FFF9EB}
   .top-actions{display:flex;gap:8px;margin-left:auto}
-  .round{width:42px;height:42px;border-radius:50%;background:#5D0D18;color:#FFF9EB;display:grid;place-items:center;font-size:17px;transition:transform .15s,box-shadow .2s;box-shadow:var(--shadow)}
-  .round.light{background:#9FB2AC;color:#27201f}
+  .round{width:42px;height:42px;border-radius:50%;background:#2c3a2c;color:#FFF9EB;display:grid;place-items:center;font-size:17px;transition:transform .15s,box-shadow .2s;box-shadow:var(--shadow)}
+  .round.light{background:#d8bd7e;color:#27201f}
   .round:hover{transform:translateY(-2px);box-shadow:0 8px 18px rgba(0,0,0,.15)}
 
   /* dashboard grid */
@@ -295,8 +297,8 @@
   .tile h3{font-size:13px;font-weight:800;letter-spacing:.3px;opacity:.9;text-transform:uppercase}
   .tile .big{font-size:30px;font-weight:800;margin-top:7px;line-height:1}
   .tile .tsub{font-size:12px;font-weight:600;opacity:.85;margin-top:5px}
-  .tile.yellow{background:#9FB2AC;color:#243029} .tile.pink{background:#e6c3c8;color:#5D0D18}
-  .tile.green{background:#bcc9c3;color:#2f3f39} .tile.lilac{background:#f0e3c2;color:#6a521e}
+  .tile.yellow{background:#e0c98a;color:#463612} .tile.pink{background:#b7c7ad;color:#2c3a2c}
+  .tile.green{background:#cdd6bf;color:#3a4a2c} .tile.lilac{background:#eee2bc;color:#6a531c}
   .tile .deco{position:absolute;right:-6px;top:-8px;font-size:52px;opacity:.2;transform:rotate(10deg)}
   .bars{display:flex;gap:5px;align-items:flex-end;height:42px;margin-top:auto}
   .bars .bar{flex:1;background:rgba(0,0,0,.26);border-radius:4px;min-height:4px;transition:height .5s ease}
@@ -305,19 +307,19 @@
   .rail-card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:16px;box-shadow:var(--shadow)}
   .panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:10px}
   .linkbtn{background:#eae2cf;border-radius:20px;padding:6px 13px;font-size:12px;font-weight:700;color:#6a5f52;cursor:pointer;transition:background .15s,color .15s}
-  .linkbtn:hover{background:#5D0D18;color:#FFF9EB}
+  .linkbtn:hover{background:#2c3a2c;color:#FFF9EB}
 
   .mini-cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
   .mini-cal-head b{font-size:14px}
-  .mini-cal-head button{background:#eae2cf;border-radius:9px;width:30px;height:30px;font-size:15px;color:#5D0D18}
+  .mini-cal-head button{background:#eae2cf;border-radius:9px;width:30px;height:30px;font-size:15px;color:#2c3a2c}
   .mini-cal-head button:hover{background:#dccfbc}
   .mini-cal{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;text-align:center}
   .mc-dow{font-size:10px;color:var(--muted);font-weight:800;padding:3px 0}
   .mc-day{aspect-ratio:1;display:grid;place-items:center;font-size:12px;border-radius:9px;cursor:pointer;transition:background .12s}
   .mc-day:hover{background:#f1ead8}
-  .mc-day.today{background:#5D0D18;color:#FFF9EB;font-weight:700}
-  .mc-day.booked{background:#9FB2AC;color:#243029;font-weight:800}
-  .mc-day.booked.today{background:#5D0D18;color:#FFF9EB}
+  .mc-day.today{background:#2c3a2c;color:#FFF9EB;font-weight:700}
+  .mc-day.booked{background:#d8bd7e;color:#243029;font-weight:800}
+  .mc-day.booked.today{background:#2c3a2c;color:#FFF9EB}
 
   .tl-item{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);cursor:pointer;transition:opacity .15s}
   .tl-item:last-child{border-bottom:none}
@@ -372,9 +374,9 @@
   /* ===== animated background orbs ===== */
   .bg-orbs{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0}
   .orb{position:absolute;border-radius:50%;filter:blur(64px);opacity:.55;animation:drift 24s ease-in-out infinite}
-  .orb.o1{width:360px;height:360px;background:radial-gradient(circle,#d9a7ad,transparent 70%);top:-90px;left:-70px}
-  .orb.o2{width:320px;height:320px;background:radial-gradient(circle,#f1e3bd,transparent 70%);bottom:-110px;right:-50px;animation-delay:-8s}
-  .orb.o3{width:280px;height:280px;background:radial-gradient(circle,#9FB2AC,transparent 70%);top:42%;right:18%;animation-delay:-15s}
+  .orb.o1{width:360px;height:360px;background:radial-gradient(circle,#e2cd91,transparent 70%);top:-90px;left:-70px}
+  .orb.o2{width:320px;height:320px;background:radial-gradient(circle,#aebfa3,transparent 70%);bottom:-110px;right:-50px;animation-delay:-8s}
+  .orb.o3{width:280px;height:280px;background:radial-gradient(circle,#d8bd7e,transparent 70%);top:42%;right:18%;animation-delay:-15s}
   @keyframes drift{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(34px,-22px) scale(1.12)}66%{transform:translate(-22px,28px) scale(.94)}}
   @media(prefers-reduced-motion:reduce){.orb{animation:none}}
 
@@ -383,10 +385,10 @@
     --ink:#ece6dd; --muted:#a89e91; --line:#34302a; --card:#211e1a;
     --green-bg:#1e3328; --red-bg:#3a221f; --amber-bg:#33291a;
     background:
-      radial-gradient(1200px 600px at 10% -10%, #3a1820 0%, rgba(0,0,0,0) 55%),
-      radial-gradient(1000px 700px at 110% 0%, #1f2a26 0%, rgba(0,0,0,0) 50%),
-      radial-gradient(900px 700px at 50% 120%, #2a1418 0%, rgba(0,0,0,0) 55%),
-      linear-gradient(180deg,#1a1011,#150d0e);
+      radial-gradient(1200px 600px at 10% -10%, #2e3a26 0%, rgba(0,0,0,0) 55%),
+      radial-gradient(1000px 700px at 110% 0%, #34301c 0%, rgba(0,0,0,0) 50%),
+      radial-gradient(900px 700px at 50% 120%, #20281e 0%, rgba(0,0,0,0) 55%),
+      linear-gradient(180deg,#14170f,#0f120c);
     background-attachment:fixed;
   }
   body.dark::before{opacity:.22}
@@ -396,7 +398,7 @@
   body.dark .topsearch{background:#211e1a;border-color:#34302a}
   body.dark .topsearch input{color:var(--ink)}
   body.dark .chip{background:#2a261f;color:#cbbfae}
-  body.dark .chip:hover{background:#9FB2AC;color:#1c1a17}
+  body.dark .chip:hover{background:#d8bd7e;color:#1c1a17}
   body.dark .round.light{background:#2a261f;color:var(--ink)}
   body.dark input,body.dark select,body.dark textarea{background:#1b1814;border-color:#34302a;color:var(--ink)}
   body.dark .btn.ghost{background:#2f2b24;color:var(--ink)}
@@ -404,11 +406,11 @@
   body.dark .iconbtn{background:#2f2b24;color:var(--ink)}
   body.dark .iconbtn:hover{background:#3a352c}
   body.dark .linkbtn{background:#2f2b24;color:#cbbfae}
-  body.dark .linkbtn:hover{background:#9FB2AC;color:#1c1a17}
+  body.dark .linkbtn:hover{background:#d8bd7e;color:#1c1a17}
   body.dark th,body.dark td{border-color:#322e27}
   body.dark tr.row:hover{background:#2a261f}
   body.dark tr.row.past td{color:#7c7368}
-  body.dark tr.row.past{background:linear-gradient(0deg,rgba(93,13,24,.08),rgba(93,13,24,.08))}
+  body.dark tr.row.past{background:linear-gradient(0deg,rgba(30,38,28,.08),rgba(30,38,28,.08))}
   body.dark tfoot td{background:#262019}
   body.dark .modal{background:#211e1a}
   body.dark .modal-head,body.dark .modal-foot{background:#211e1a;border-color:#34302a}
@@ -429,7 +431,13 @@
 <div id="confetti" aria-hidden="true"></div>
 <div class="app">
 <aside class="sidebar">
-  <div class="side-brand"><div class="logo">MB</div><b>Béthanie</b></div>
+  <div class="side-brand">
+    <svg width="38" height="32" viewBox="0 0 100 78" fill="none" stroke="#d8bd7e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="flex:0 0 auto"><path d="M50 6 L50 14"/><path d="M50 6 L61 9 L50 12 Z" fill="#d8bd7e" stroke="none"/><path d="M50 14 Q34 20 14 40"/><path d="M50 14 Q66 20 86 40"/><path d="M14 40 q4.5 7 9 0 q4.5 7 9 0 q4.5 7 9 0 q4.5 7 9 0 q4.5 7 9 0 q4.5 7 9 0 q4.5 7 9 0 q4.5 7 9 0"/><path d="M16 40 L16 62"/><path d="M84 40 L84 62"/><path d="M10 62 L90 62"/></svg>
+    <div style="line-height:1.05">
+      <b style="font-family:'Cormorant Garamond',serif;font-weight:600;font-size:19px;letter-spacing:.3px">Maison Béthanie</b>
+      <div style="font-size:9px;letter-spacing:2px;color:#d8bd7e;margin-top:3px">WEDDINGS · KIGALI</div>
+    </div>
+  </div>
   <div class="side-label">General</div>
   <button class="navitem active" data-view="dashboard"><span class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg></span><span class="lbl">Dashboard</span></button>
   <button class="navitem" data-view="check"><span class="ic"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg></span><span class="lbl">Check a Date</span></button>
@@ -762,7 +770,7 @@ function renderDashboard(){
 
   const bars=cnt.map(c=>`<div class="bar" style="height:${Math.round(c/maxC*100)}%" title="${c} booking(s)"></div>`).join('');
   const pts=rev.map((r,i)=>`${(i/(rev.length-1))*100},${42-(r/maxR)*36-3}`).join(' ');
-  const spark=`<svg class="spark" viewBox="0 0 100 42" preserveAspectRatio="none"><polyline points="${pts}" fill="none" stroke="rgba(93,13,24,.8)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/></svg>`;
+  const spark=`<svg class="spark" viewBox="0 0 100 42" preserveAspectRatio="none"><polyline points="${pts}" fill="none" stroke="rgba(30,38,28,.8)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/></svg>`;
 
   document.getElementById('tiles').innerHTML=`
     <div class="tile yellow"><div class="deco">📖</div><h3>Bookings</h3><div class="big">${active.length}</div><div class="tsub">${upcoming.length} upcoming · ${past.length} past</div><div class="bars">${bars}</div></div>
@@ -812,11 +820,11 @@ function miniPick(ds){
 function renderTimeline(){
   const today=todayStr();
   const items=DB.filter(w=>endOf(w)>=today&&w.status!=='cancelled').sort((a,b)=>a.date.localeCompare(b.date)).slice(0,6);
-  const colors={'Wedding':'#5D0D18','Civil wedding':'#9FB2AC','Traditional (Gusaba)':'#b08948','Engagement':'#6f857d','Birthday':'#c98b95','Corporate event':'#7f9a90'};
+  const colors={'Wedding':'#2c3a2c','Civil wedding':'#c9a85a','Traditional (Gusaba)':'#8a7a2a','Engagement':'#6f8a64','Birthday':'#d8bd7e','Corporate event':'#5d7a55'};
   const el=document.getElementById('timeline');
   if(!items.length){el.innerHTML='<div class="muted" style="font-size:13px;padding:6px 0">No upcoming events. Click ＋ Add event.</div>';return}
   el.innerHTML=items.map(w=>{
-    const c=colors[w.eventType]||'#9FB2AC';
+    const c=colors[w.eventType]||'#d8bd7e';
     const d=new Date(w.date+'T00:00:00');
     return `<div class="tl-item" onclick="openForm('${w.id}')">
       <div class="tl-dot" style="background:${c}"></div>
@@ -1191,7 +1199,7 @@ function initPetals(){
 function celebrate(){
   if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion:reduce)').matches)return;
   const box=document.getElementById('confetti');
-  const colors=['#5D0D18','#9FB2AC','#c98b95','#FFF9EB','#6f857d','#e6c3c8'];
+  const colors=['#2c3a2c','#d8bd7e','#6f8a64','#FFF9EB','#c9a85a','#aebfa3'];
   for(let i=0;i<70;i++){
     const c=document.createElement('div');
     c.className='confetti-bit';
