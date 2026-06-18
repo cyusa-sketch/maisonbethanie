@@ -448,6 +448,7 @@
     <span class="chip" onclick="switchView('calendar')">Calendar</span>
   </div>
   <div class="top-actions">
+    <button class="btn sm" id="installBtn" onclick="installApp()" style="align-self:center;display:none;white-space:nowrap">📲 Install app</button>
     <span id="cloudStatus" title="Cloud sync status" style="font-size:12px;font-weight:700;align-self:center;margin-right:4px;white-space:nowrap">● Local only</span>
     <div class="bell-wrap">
       <button class="round light" id="bellBtn" title="Notifications" onclick="toggleNotifs()"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg><span class="bell-badge" id="bellBadge" style="display:none">0</span></button>
@@ -545,6 +546,15 @@
 </main>
 </div><!-- /.content -->
 </div><!-- /.app -->
+
+<!-- INSTALL HELP MODAL -->
+<div class="overlay" id="installHelp">
+  <div class="modal" style="max-width:430px">
+    <div class="modal-head"><h2>📲 Install Maison Béthanie</h2><button class="x" onclick="closeInstallHelp()">×</button></div>
+    <div class="modal-body" id="installHelpBody"></div>
+    <div class="modal-foot"><button class="btn" style="margin-left:auto" onclick="closeInstallHelp()">Got it</button></div>
+  </div>
+</div>
 
 <!-- BOOKING MODAL -->
 <div class="overlay" id="overlay">
@@ -1203,6 +1213,54 @@ initCloud();
 if('serviceWorker' in navigator){
   window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 }
+
+/* ---------- PWA: install / "download" the app ---------- */
+let deferredPrompt=null;
+function isStandalone(){return window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true;}
+function refreshInstallBtn(){
+  const b=document.getElementById('installBtn');if(!b)return;
+  b.style.display=isStandalone()?'none':'inline-block';
+}
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;refreshInstallBtn();});
+window.addEventListener('appinstalled',()=>{deferredPrompt=null;refreshInstallBtn();toast('App installed 🎉','Open “Béthanie” from your home screen anytime.','success');});
+function installApp(){
+  if(deferredPrompt){
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.finally(()=>{deferredPrompt=null;refreshInstallBtn();});
+  }else{
+    showInstallHelp();
+  }
+}
+function showInstallHelp(){
+  const ua=navigator.userAgent;
+  const ios=/iPhone|iPad|iPod/i.test(ua);
+  const android=/Android/i.test(ua);
+  let html;
+  if(ios){
+    html='<p>On your iPhone/iPad, install with <b>Safari</b>:</p>'+
+      '<ol style="padding-left:18px;line-height:1.9">'+
+      '<li>Tap the <b>Share</b> button <span style="font-size:17px">⬆️</span> at the bottom of Safari.</li>'+
+      '<li>Scroll down and tap <b>“Add to Home Screen”</b>.</li>'+
+      '<li>Tap <b>Add</b> — the “MB” icon appears on your home screen.</li></ol>';
+  }else if(android){
+    html='<p>On Android (Chrome):</p>'+
+      '<ol style="padding-left:18px;line-height:1.9">'+
+      '<li>Tap the <b>⋮</b> menu (top-right of Chrome).</li>'+
+      '<li>Tap <b>“Install app”</b> or <b>“Add to Home screen”</b>.</li>'+
+      '<li>Confirm — the “MB” icon appears on your home screen.</li></ol>';
+  }else{
+    html='<p>On a computer (Chrome/Edge):</p>'+
+      '<ol style="padding-left:18px;line-height:1.9">'+
+      '<li>Click the <b>install icon</b> <span style="font-size:16px">⊕</span> at the right of the address bar, <i>or</i> the <b>⋮</b> menu → <b>“Install Maison Béthanie”</b>.</li>'+
+      '<li>Click <b>Install</b> — it opens in its own window with a desktop shortcut.</li></ol>'+
+      '<p class="muted" style="margin-top:10px">If you don’t see it, the app may already be installed.</p>';
+  }
+  document.getElementById('installHelpBody').innerHTML=html;
+  document.getElementById('installHelp').classList.add('open');
+}
+function closeInstallHelp(){document.getElementById('installHelp').classList.remove('open');}
+document.getElementById('installHelp').addEventListener('click',e=>{if(e.target.id==='installHelp')closeInstallHelp();});
+refreshInstallBtn();
 </script>
 </body>
 </html>
