@@ -1,5 +1,5 @@
-/* Maison Béthanie service worker — offline app shell */
-const CACHE = 'mb-v1';
+/* Maison Béthanie service worker — offline support + auto-update */
+const CACHE = 'mb-v2';
 const ASSETS = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
@@ -16,15 +16,31 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
-  // Only handle our own files; let Supabase + CDN go straight to the network.
+  // Let Supabase + CDN go straight to the network.
   if (url.origin !== location.origin) return;
-  e.respondWith(
-    caches.match(e.request).then(cached =>
-      cached || fetch(e.request).then(resp => {
+
+  const isPage = e.request.mode === 'navigate' || e.request.destination === 'document'
+    || url.pathname.endsWith('/') || url.pathname.endsWith('index.html');
+
+  if (isPage) {
+    // Network-first so the app always updates when online; cache as offline fallback.
+    e.respondWith(
+      fetch(e.request).then(resp => {
         const copy = resp.clone();
-        caches.open(CACHE).then(c => c.put(e.request, copy));
+        caches.open(CACHE).then(c => c.put('./index.html', copy));
         return resp;
-      }).catch(() => caches.match('./index.html'))
-    )
-  );
+      }).catch(() => caches.match('./index.html') || caches.match('./'))
+    );
+  } else {
+    // Cache-first for static assets (icons, manifest).
+    e.respondWith(
+      caches.match(e.request).then(cached =>
+        cached || fetch(e.request).then(resp => {
+          const copy = resp.clone();
+          caches.open(CACHE).then(c => c.put(e.request, copy));
+          return resp;
+        })
+      )
+    );
+  }
 });
