@@ -1251,6 +1251,7 @@ async function tryUnlock(){
   if(await _sha(inp.value.trim().toLowerCase())===PASS_HASH){
     (document.getElementById('lockRemember').checked?localStorage:sessionStorage).setItem('mb_unlocked','1');
     closeLock();
+    startApp();
   }else{
     document.getElementById('lockErr').textContent='❌ Wrong passcode. Please try again.';
     const card=document.querySelector('.lock-card');
@@ -1277,14 +1278,19 @@ function applyTheme(t){
 function toggleTheme(){applyTheme(document.body.classList.contains('dark')?'light':'dark');}
 applyTheme(localStorage.getItem('mb_theme')|| (window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'));
 
-initLock();
-initPetals();
-document.getElementById('checkDate').value=todayStr();
-refreshAll();
-updateAlertToggle();
-notifyTodaysEvents();
-initCloud();
-if('Notification' in window&&Notification.permission==='granted')setTimeout(subscribePush,1500);
+/* The app only initializes AFTER login — the lock screen is a hard gate. */
+function startApp(){
+  if(window.__started)return; window.__started=true;
+  initPetals();
+  document.getElementById('checkDate').value=todayStr();
+  refreshAll();
+  updateAlertToggle();
+  notifyTodaysEvents();
+  initCloud();
+  if('Notification' in window&&Notification.permission==='granted')setTimeout(subscribePush,1500);
+}
+if(isUnlocked()){closeLock();startApp();}
+else{document.body.classList.add('locked');const _i=document.getElementById('lockInput');if(_i)setTimeout(()=>_i.focus(),120);}
 
 /* ---------- PWA: register service worker for offline + install ---------- */
 if('serviceWorker' in navigator){
