@@ -386,6 +386,8 @@
   .lock-remember{display:flex;align-items:center;justify-content:center;gap:7px;font-size:12px;color:#7d8276;margin-top:14px;cursor:pointer}
   .lock-remember input{width:auto;accent-color:#2c3a2c}
   body.locked{overflow:hidden}
+  body.role-monitor .mgr-only{display:none!important}
+  .role-badge{display:none;align-items:center;gap:5px;background:#d8bd7e;color:#2c2410;font-size:11px;font-weight:800;padding:6px 11px;border-radius:20px;align-self:center;white-space:nowrap}
 
   /* ===== animated background orbs ===== */
   .bg-orbs{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0}
@@ -472,7 +474,7 @@
   <button class="navitem" data-view="calendar"><span class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="8" y1="2.5" x2="8" y2="6"/><line x1="16" y1="2.5" x2="16" y2="6"/></svg></span><span class="lbl">Calendar</span></button>
   <div class="side-label">Tools</div>
   <button class="navitem" onclick="exportData()"><span class="ic"><svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg></span><span class="lbl">Backup</span></button>
-  <button class="navitem" onclick="document.getElementById('importFile').click()"><span class="ic"><svg viewBox="0 0 24 24"><path d="M12 21V9"/><path d="M7 14l5-5 5 5"/><path d="M5 3h14"/></svg></span><span class="lbl">Restore</span></button>
+  <button class="navitem mgr-only" onclick="document.getElementById('importFile').click()"><span class="ic"><svg viewBox="0 0 24 24"><path d="M12 21V9"/><path d="M7 14l5-5 5 5"/><path d="M5 3h14"/></svg></span><span class="lbl">Restore</span></button>
   <button class="navitem" onclick="lockApp()"><span class="ic"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span><span class="lbl">Lock</span></button>
 </aside>
 
@@ -486,6 +488,7 @@
   </div>
   <div class="top-actions">
     <button class="btn sm" id="installBtn" onclick="installApp()" style="align-self:center;display:none;white-space:nowrap">📲 Install app</button>
+    <span id="roleBadge" class="role-badge">👁️ View only</span>
     <span id="cloudStatus" title="Cloud sync status" style="font-size:12px;font-weight:700;align-self:center;margin-right:4px;white-space:nowrap">● Local only</span>
     <div class="bell-wrap">
       <button class="round light" id="bellBtn" title="Notifications" onclick="toggleNotifs()"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg><span class="bell-badge" id="bellBadge" style="display:none">0</span></button>
@@ -496,8 +499,8 @@
     </div>
     <button class="round light" id="themeBtn" title="Toggle dark mode" onclick="toggleTheme()"></button>
     <button class="round light" title="Backup" onclick="exportData()"><svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg></button>
-    <button class="round light" title="Restore" onclick="document.getElementById('importFile').click()"><svg viewBox="0 0 24 24"><path d="M12 21V9"/><path d="M7 14l5-5 5 5"/><path d="M5 3h14"/></svg></button>
-    <button class="round" title="New booking" onclick="openForm()"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+    <button class="round light mgr-only" title="Restore" onclick="document.getElementById('importFile').click()"><svg viewBox="0 0 24 24"><path d="M12 21V9"/><path d="M7 14l5-5 5 5"/><path d="M5 3h14"/></svg></button>
+    <button class="round mgr-only" title="New booking" onclick="openForm()"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
     <input type="file" id="importFile" accept="application/json" style="display:none" onchange="importData(this)">
   </div>
 </div>
@@ -521,7 +524,7 @@
         <div class="rail-card">
           <div class="mini-cal-head"><button onclick="miniMove(-1)">‹</button><b id="miniCalTitle"></b><button onclick="miniMove(1)">›</button></div>
           <div class="mini-cal" id="miniCal"></div>
-          <button class="btn" style="width:100%;margin-top:12px" onclick="openForm()">＋ Add event</button>
+          <button class="btn mgr-only" style="width:100%;margin-top:12px" onclick="openForm()">＋ Add event</button>
         </div>
         <div class="rail-card">
           <div class="panel-head"><h2 style="font-size:15px">🗓️ Today &amp; upcoming</h2></div>
@@ -542,7 +545,7 @@
           <input type="date" id="checkDate">
         </div>
         <button class="btn" onclick="checkDate()">Check availability</button>
-        <button class="btn ghost" onclick="quickBookFromCheck()">+ Book this date</button>
+        <button class="btn ghost mgr-only" onclick="quickBookFromCheck()">+ Book this date</button>
       </div>
       <div class="result" id="checkResult"></div>
     </div>
@@ -562,7 +565,7 @@
         <option value="name">Sort by couple</option>
         <option value="received">Sort by amount received</option>
       </select>
-      <button class="btn" onclick="openForm()">+ New Booking</button>
+      <button class="btn mgr-only" onclick="openForm()">+ New Booking</button>
     </div>
     <div class="panel" style="padding:0">
       <div id="bookingsTable"></div>
@@ -656,7 +659,7 @@
         <h3 style="font-size:14px;margin-bottom:6px">Payments received</h3>
         <div id="payMeta" class="hint"></div>
         <div class="pay-list" id="payList"></div>
-        <div class="pay-add">
+        <div class="pay-add mgr-only">
           <input type="number" min="0" id="payAmount" placeholder="Amount (RWF)">
           <input type="date" id="payDate">
           <input id="payMethod" placeholder="Method (cash, MoMo…)" style="flex:1 1 120px">
@@ -665,10 +668,10 @@
       </div>
     </div>
     <div class="modal-foot">
-      <button class="btn danger" id="deleteBtn" onclick="deleteBooking()">Delete</button>
+      <button class="btn danger mgr-only" id="deleteBtn" onclick="deleteBooking()">Delete</button>
       <div style="display:flex;gap:10px;margin-left:auto">
-        <button class="btn ghost" onclick="closeForm()">Cancel</button>
-        <button class="btn" onclick="saveBooking()">Save booking</button>
+        <button class="btn ghost" onclick="closeForm()">Close</button>
+        <button class="btn mgr-only" onclick="saveBooking()">Save booking</button>
       </div>
     </div>
   </div>
@@ -808,7 +811,7 @@ function renderDashboard(){
 
   const list=upcoming.sort((a,b)=>a.date.localeCompare(b.date));
   const el=document.getElementById('upcomingList');
-  if(!list.length){el.innerHTML='<div class="empty"><div class="big">💍</div>No upcoming weddings yet.<br><button class="btn" style="margin-top:14px" onclick="openForm()">+ Add your first booking</button></div>';}
+  if(!list.length){el.innerHTML='<div class="empty"><div class="big">💍</div>No upcoming weddings yet.<br><button class="btn mgr-only" style="margin-top:14px" onclick="openForm()">+ Add your first booking</button></div>';}
   else{el.innerHTML='<div class="table-wrap"><table class="rtable"><thead><tr><th>Date</th><th>Days left</th><th>Couple</th><th>Hall</th><th class="right">Received</th></tr></thead><tbody>'+
     list.map(w=>{const start=new Date(w.date);const days=Math.ceil((start-new Date(today))/86400000);
       return `<tr class="row" onclick="openForm('${w.id}')">
@@ -917,7 +920,7 @@ function renderBookings(){
         <td data-label="Package">${escapeHtml(w.package||'—')}</td>
         <td class="right nowrap" data-label="Received">${fmtMoney(paid(w))}</td>
         <td data-label="Status"><span class="badge ${STATUS_BADGE[w.status]||'partial'}">${STATUS_LABEL[w.status]||w.status}</span></td>
-        <td class="right nowrap actions" onclick="event.stopPropagation()">
+        <td class="right nowrap actions mgr-only" onclick="event.stopPropagation()">
           <button class="iconbtn" title="Edit" onclick="openForm('${w.id}')">✎</button>
           <button class="iconbtn" title="Duplicate" onclick="duplicateBooking('${w.id}')">⧉</button>
           <button class="iconbtn del" title="Delete" onclick="deleteBookingById('${w.id}')">🗑</button>
@@ -926,6 +929,7 @@ function renderBookings(){
     '</table></div>';
 }
 function duplicateBooking(id){
+  if(!isManager()){toast('View-only access 👁️','Use the manager passcode to add bookings.','warn');return;}
   const w=DB.find(x=>x.id===id);if(!w)return;
   const copy=JSON.parse(JSON.stringify(w));
   copy.id=uid();copy.couple=w.couple+' (copy)';copy.payments=[];copy.status='tentative';
@@ -933,6 +937,7 @@ function duplicateBooking(id){
   openForm(copy.id);
 }
 function deleteBookingById(id){
+  if(!isManager()){toast('View-only access 👁️','Use the manager passcode to delete bookings.','warn');return;}
   const w=DB.find(x=>x.id===id);if(!w)return;
   if(confirm('Delete the booking for "'+w.couple+'" on '+fmtDate(w.date)+'? This cannot be undone.')){
     DB=DB.filter(x=>x.id!==id);save();refreshAll();cloudDelete(id);
@@ -972,6 +977,10 @@ function openForm(id){
     del.style.display='none';
   }
   toggleMulti();syncEndMin();
+  // monitors get a read-only view
+  const ro=!isManager();
+  ['f_couple','f_phone','f_date','f_hall','f_event','f_package','f_status','f_notes','f_multi','f_end'].forEach(i=>{const el=document.getElementById(i);if(el)el.disabled=ro;});
+  if(ro)document.getElementById('modalTitle').textContent='Booking (view only)';
   // stop the date picker from selecting past days (but keep an existing historical date editable)
   const editId=document.getElementById('f_id').value;
   const ex=editId?DB.find(x=>x.id===editId):null;
@@ -993,12 +1002,13 @@ function renderPayments(){
   const list=document.getElementById('payList');
   list.innerHTML=editingPayments.length?editingPayments.map((p,i)=>
     `<div class="pay-item"><span>${fmtMoney(p.amount)} <span class="muted">· ${fmtDate(p.date)}${p.method?' · '+escapeHtml(p.method):''}</span></span>
-     <span class="nowrap"><button class="iconbtn" title="Edit" onclick="editPayment(${i})">✎</button>
+     <span class="nowrap mgr-only"><button class="iconbtn" title="Edit" onclick="editPayment(${i})">✎</button>
      <button class="iconbtn del" title="Remove" onclick="removePayment(${i})">🗑</button></span></div>`).join('')
     :'<div class="hint">No payments recorded yet.</div>';
   document.getElementById('payMeta').innerHTML=`Total received: <b style="color:var(--green)">${fmtMoney(sum)}</b>`;
 }
 function addPayment(){
+  if(!isManager())return;
   const amt=Number(document.getElementById('payAmount').value);
   if(!amt||amt<=0){alert('Enter a payment amount.');return}
   editingPayments.push({amount:amt,date:document.getElementById('payDate').value||todayStr(),method:document.getElementById('payMethod').value.trim()});
@@ -1021,6 +1031,7 @@ function editPayment(i){
 }
 
 function saveBooking(){
+  if(!isManager()){toast('View-only access 👁️','Use the manager passcode to add or edit bookings.','warn');return;}
   const couple=document.getElementById('f_couple').value.trim();
   const date=document.getElementById('f_date').value;
   if(!couple){alert('Please enter the couple / client name.');return}
@@ -1066,6 +1077,7 @@ function saveBooking(){
   }
 }
 function deleteBooking(){
+  if(!isManager())return;
   const id=document.getElementById('f_id').value;
   const w=DB.find(x=>x.id===id);
   if(!w)return;
@@ -1104,6 +1116,7 @@ function exportData(){
   a.click();
 }
 function importData(input){
+  if(!isManager()){toast('View-only access 👁️','Only a manager can restore data.','warn');input.value='';return;}
   const file=input.files[0];if(!file)return;
   const r=new FileReader();
   r.onload=()=>{
@@ -1243,14 +1256,28 @@ function celebrate(){
 }
 
 /* ---------- passcode lock ---------- */
-const PASS_HASH='b6f6722269990caaba1d4a4f17ee269c97d4006a8ffd46502ba2bd04ca114f27';
+const PASS_MANAGER='b6f6722269990caaba1d4a4f17ee269c97d4006a8ffd46502ba2bd04ca114f27';
+const PASS_MONITOR='d5202e6904b89534425e3e52d9173445bf493805ad2c40edddd1529d497cde18';
 async function _sha(s){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');}
-function isUnlocked(){return localStorage.getItem('mb_unlocked')==='1'||sessionStorage.getItem('mb_unlocked')==='1';}
+function getRole(){
+  const r=localStorage.getItem('mb_role')||sessionStorage.getItem('mb_role');
+  if(r)return r;
+  if(localStorage.getItem('mb_unlocked')==='1'||sessionStorage.getItem('mb_unlocked')==='1')return 'manager';
+  return null;
+}
+function isUnlocked(){return getRole()!==null;}
+function isManager(){return getRole()==='manager';}
+function applyRole(){
+  document.body.classList.toggle('role-monitor',getRole()==='monitor');
+  const b=document.getElementById('roleBadge');if(b)b.style.display=getRole()==='monitor'?'inline-flex':'none';
+}
 async function tryUnlock(){
   const inp=document.getElementById('lockInput');
-  if(await _sha(inp.value.trim().toLowerCase())===PASS_HASH){
-    (document.getElementById('lockRemember').checked?localStorage:sessionStorage).setItem('mb_unlocked','1');
-    closeLock();
+  const h=await _sha(inp.value.trim().toLowerCase());
+  const role=h===PASS_MANAGER?'manager':(h===PASS_MONITOR?'monitor':null);
+  if(role){
+    (document.getElementById('lockRemember').checked?localStorage:sessionStorage).setItem('mb_role',role);
+    closeLock();applyRole();
     startApp();
   }else{
     document.getElementById('lockErr').textContent='❌ Wrong passcode. Please try again.';
@@ -1260,7 +1287,7 @@ async function tryUnlock(){
   }
 }
 function closeLock(){document.getElementById('lockScreen').style.display='none';document.body.classList.remove('locked');}
-function lockApp(){localStorage.removeItem('mb_unlocked');sessionStorage.removeItem('mb_unlocked');location.reload();}
+function lockApp(){['mb_role','mb_unlocked'].forEach(k=>{localStorage.removeItem(k);sessionStorage.removeItem(k);});location.reload();}
 function initLock(){
   if(isUnlocked()){closeLock();}
   else{document.body.classList.add('locked');const i=document.getElementById('lockInput');if(i)setTimeout(()=>i.focus(),100);}
@@ -1289,7 +1316,7 @@ function startApp(){
   initCloud();
   if('Notification' in window&&Notification.permission==='granted')setTimeout(subscribePush,1500);
 }
-if(isUnlocked()){closeLock();startApp();}
+if(isUnlocked()){closeLock();applyRole();startApp();}
 else{document.body.classList.add('locked');const _i=document.getElementById('lockInput');if(_i)setTimeout(()=>_i.focus(),120);}
 
 /* ---------- PWA: register service worker for offline + install ---------- */
