@@ -443,10 +443,10 @@
 <div id="toasts" aria-live="polite"></div>
 <div id="lockScreen">
   <div class="lock-card">
-    <svg width="56" height="46" viewBox="0 0 100 80" style="margin-bottom:4px"><path d="M50 12 Q72 18 88 46 L68 64 L32 64 L12 46 Q28 18 50 12 Z M42 64 L48 64 L49 38 Z M52 64 L58 64 L51 38 Z" fill="#2c3a2c" fill-rule="evenodd"/><g stroke="#2c3a2c" stroke-width="2.4" stroke-linecap="round" fill="none"><path d="M12 46 L3 62"/><path d="M88 46 L97 62"/></g></svg>
+    <svg width="64" height="45" viewBox="0 0 100 70" style="margin-bottom:4px"><path d="M6 44 C12.667 28 20.667 18.667 30 16 C38 17.333 44.667 22 50 30 C55.333 22 62 17.333 70 16 C79.333 18.667 87.333 28 94 44 q-4.4 8 -8.8 0 q-4.4 8 -8.8 0 q-4.4 8 -8.8 0 q-4.4 8 -8.8 0 q-4.4 8 -8.8 0 q-4.4 8 -8.8 0 q-4.4 8 -8.8 0 q-4.4 8 -8.8 0 q-4.4 8 -8.8 0 q-4.4 8 -8.8 0 Z" fill="#2c3a2c"/><path d="M30 8 L38 10.5 L30 13 Z" fill="#2c3a2c"/><path d="M70 8 L62 10.5 L70 13 Z" fill="#2c3a2c"/><g stroke="#2c3a2c" stroke-width="2.6" stroke-linecap="round" fill="none"><path d="M30 16 L30 8"/><path d="M70 16 L70 8"/><path d="M12 50 L12 66"/><path d="M50 49 L50 66"/><path d="M88 50 L88 66"/><path d="M7 66 L93 66"/></g></svg>
     <h1>Maison Béthanie</h1>
     <p>Enter passcode to continue</p>
-    <input type="password" id="lockInput" autocomplete="off" placeholder="Passcode" onkeydown="if(event.key==='Enter')tryUnlock()">
+    <input type="password" id="lockInput" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="Passcode" onkeydown="if(event.key==='Enter')tryUnlock()">
     <button class="lock-btn" onclick="tryUnlock()">Unlock</button>
     <div id="lockErr" class="lock-err"></div>
     <label class="lock-remember"><input type="checkbox" id="lockRemember" checked> Stay unlocked on this device</label>
@@ -457,7 +457,7 @@
 <div class="app">
 <aside class="sidebar">
   <div class="side-brand">
-    <svg width="40" height="32" viewBox="0 0 100 80" style="flex:0 0 auto"><path d="M50 12 Q72 18 88 46 L68 64 L32 64 L12 46 Q28 18 50 12 Z M42 64 L48 64 L49 38 Z M52 64 L58 64 L51 38 Z" fill="#d8bd7e" fill-rule="evenodd"/><g stroke="#d8bd7e" stroke-width="2.4" stroke-linecap="round" fill="none"><path d="M12 46 L3 62"/><path d="M88 46 L97 62"/><path d="M3 58 L3 66"/><path d="M97 58 L97 66"/></g></svg>
+    <svg width="42" height="30" viewBox="0 0 100 70" style="flex:0 0 auto"><path d="M6 44 C12.667 28 20.667 18.667 30 16 C38 17.333 44.667 22 50 30 C55.333 22 62 17.333 70 16 C79.333 18.667 87.333 28 94 44 q-4.4 8 -8.8 0 q-4.4 8 -8.8 0 q-4.4 8 -8.8 0 q-4.4 8 -8.8 0 q-4.4 8 -8.8 0 q-4.4 8 -8.8 0 q-4.4 8 -8.8 0 q-4.4 8 -8.8 0 q-4.4 8 -8.8 0 q-4.4 8 -8.8 0 Z" fill="#d8bd7e"/><path d="M30 8 L38 10.5 L30 13 Z" fill="#d8bd7e"/><path d="M70 8 L62 10.5 L70 13 Z" fill="#d8bd7e"/><g stroke="#d8bd7e" stroke-width="2.6" stroke-linecap="round" fill="none"><path d="M30 16 L30 8"/><path d="M70 16 L70 8"/><path d="M12 50 L12 66"/><path d="M50 49 L50 66"/><path d="M88 50 L88 66"/><path d="M7 66 L93 66"/></g></svg>
     <div style="line-height:1.05">
       <b style="font-family:'Cormorant Garamond',serif;font-weight:600;font-size:19px;letter-spacing:.3px">Maison Béthanie</b>
       <div style="font-size:9px;letter-spacing:2px;color:#d8bd7e;margin-top:3px">WEDDINGS · KIGALI</div>
@@ -1246,7 +1246,7 @@ async function _sha(s){const b=await crypto.subtle.digest('SHA-256',new TextEnco
 function isUnlocked(){return localStorage.getItem('mb_unlocked')==='1'||sessionStorage.getItem('mb_unlocked')==='1';}
 async function tryUnlock(){
   const inp=document.getElementById('lockInput');
-  if(await _sha(inp.value)===PASS_HASH){
+  if(await _sha(inp.value.trim().toLowerCase())===PASS_HASH){
     (document.getElementById('lockRemember').checked?localStorage:sessionStorage).setItem('mb_unlocked','1');
     closeLock();
   }else{
