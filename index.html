@@ -371,6 +371,20 @@
   @keyframes toastOut{to{transform:translateX(120%);opacity:0}}
   @media(max-width:600px){#toasts{left:12px;right:12px;bottom:12px}.toast{max-width:none}}
 
+  /* ===== passcode lock screen ===== */
+  #lockScreen{position:fixed;inset:0;z-index:300;background:linear-gradient(160deg,#2c3a2c,#1e2a1c);display:flex;align-items:center;justify-content:center;padding:20px}
+  .lock-card{background:rgba(255,249,235,.98);border-radius:24px;padding:36px 30px;width:100%;max-width:340px;text-align:center;box-shadow:0 24px 64px rgba(0,0,0,.4)}
+  .lock-card h1{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:27px;color:#2c3a2c;margin-top:8px}
+  .lock-card p{font-size:13px;color:#7d8276;margin:4px 0 18px}
+  .lock-card input[type=password]{width:100%;text-align:center;font-size:18px;letter-spacing:3px;padding:13px;border:1px solid #e2dcc4;border-radius:13px;background:#fff;color:#23291f}
+  .lock-card input[type=password]:focus{outline:none;border-color:#d8bd7e}
+  .lock-btn{width:100%;margin-top:12px;background:#2c3a2c;color:#FFF9EB;padding:13px;border-radius:13px;font-weight:700;font-size:15px;transition:background .15s}
+  .lock-btn:hover{background:#22301f}
+  .lock-err{color:#9a2a22;font-size:13px;font-weight:600;margin-top:10px;min-height:18px}
+  .lock-remember{display:flex;align-items:center;justify-content:center;gap:7px;font-size:12px;color:#7d8276;margin-top:14px;cursor:pointer}
+  .lock-remember input{width:auto;accent-color:#2c3a2c}
+  body.locked{overflow:hidden}
+
   /* ===== animated background orbs ===== */
   .bg-orbs{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0}
   .orb{position:absolute;border-radius:50%;filter:blur(64px);opacity:.55;animation:drift 24s ease-in-out infinite}
@@ -427,6 +441,17 @@
 <body>
 <div class="bg-orbs" aria-hidden="true"><span class="orb o1"></span><span class="orb o2"></span><span class="orb o3"></span></div>
 <div id="toasts" aria-live="polite"></div>
+<div id="lockScreen">
+  <div class="lock-card">
+    <svg width="56" height="46" viewBox="0 0 100 80" style="margin-bottom:4px"><path d="M50 12 Q72 18 88 46 L68 64 L32 64 L12 46 Q28 18 50 12 Z M42 64 L48 64 L49 38 Z M52 64 L58 64 L51 38 Z" fill="#2c3a2c" fill-rule="evenodd"/><g stroke="#2c3a2c" stroke-width="2.4" stroke-linecap="round" fill="none"><path d="M12 46 L3 62"/><path d="M88 46 L97 62"/></g></svg>
+    <h1>Maison Béthanie</h1>
+    <p>Enter passcode to continue</p>
+    <input type="password" id="lockInput" autocomplete="off" placeholder="Passcode" onkeydown="if(event.key==='Enter')tryUnlock()">
+    <button class="lock-btn" onclick="tryUnlock()">Unlock</button>
+    <div id="lockErr" class="lock-err"></div>
+    <label class="lock-remember"><input type="checkbox" id="lockRemember" checked> Stay unlocked on this device</label>
+  </div>
+</div>
 <div class="petals" id="petals" aria-hidden="true"></div>
 <div id="confetti" aria-hidden="true"></div>
 <div class="app">
@@ -446,6 +471,7 @@
   <div class="side-label">Tools</div>
   <button class="navitem" onclick="exportData()"><span class="ic"><svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg></span><span class="lbl">Backup</span></button>
   <button class="navitem" onclick="document.getElementById('importFile').click()"><span class="ic"><svg viewBox="0 0 24 24"><path d="M12 21V9"/><path d="M7 14l5-5 5 5"/><path d="M5 3h14"/></svg></span><span class="lbl">Restore</span></button>
+  <button class="navitem" onclick="lockApp()"><span class="ic"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span><span class="lbl">Lock</span></button>
 </aside>
 
 <div class="content">
@@ -1214,6 +1240,27 @@ function celebrate(){
   }
 }
 
+/* ---------- passcode lock ---------- */
+const PASS_HASH='b6f6722269990caaba1d4a4f17ee269c97d4006a8ffd46502ba2bd04ca114f27';
+async function _sha(s){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');}
+function isUnlocked(){return localStorage.getItem('mb_unlocked')==='1'||sessionStorage.getItem('mb_unlocked')==='1';}
+async function tryUnlock(){
+  const inp=document.getElementById('lockInput');
+  if(await _sha(inp.value)===PASS_HASH){
+    (document.getElementById('lockRemember').checked?localStorage:sessionStorage).setItem('mb_unlocked','1');
+    closeLock();
+  }else{
+    document.getElementById('lockErr').textContent='Incorrect passcode. Try again.';
+    inp.value='';inp.focus();
+  }
+}
+function closeLock(){document.getElementById('lockScreen').style.display='none';document.body.classList.remove('locked');}
+function lockApp(){localStorage.removeItem('mb_unlocked');sessionStorage.removeItem('mb_unlocked');location.reload();}
+function initLock(){
+  if(isUnlocked()){closeLock();}
+  else{document.body.classList.add('locked');const i=document.getElementById('lockInput');if(i)setTimeout(()=>i.focus(),100);}
+}
+
 /* ---------- dark mode ---------- */
 const ICON_MOON='<svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>';
 const ICON_SUN='<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/><line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/><line x1="4.9" y1="4.9" x2="6.3" y2="6.3"/><line x1="17.7" y1="17.7" x2="19.1" y2="19.1"/><line x1="4.9" y1="19.1" x2="6.3" y2="17.7"/><line x1="17.7" y1="6.3" x2="19.1" y2="4.9"/></svg>';
@@ -1226,6 +1273,7 @@ function applyTheme(t){
 function toggleTheme(){applyTheme(document.body.classList.contains('dark')?'light':'dark');}
 applyTheme(localStorage.getItem('mb_theme')|| (window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'));
 
+initLock();
 initPetals();
 document.getElementById('checkDate').value=todayStr();
 refreshAll();
