@@ -1,5 +1,5 @@
 /* Maison Béthanie service worker — offline support + auto-update + push */
-const CACHE = 'mb-v3';
+const CACHE = 'mb-v4';
 const ASSETS = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {

@@ -381,6 +381,8 @@
   .lock-btn{width:100%;margin-top:12px;background:#2c3a2c;color:#FFF9EB;padding:13px;border-radius:13px;font-weight:700;font-size:15px;transition:background .15s}
   .lock-btn:hover{background:#22301f}
   .lock-err{color:#9a2a22;font-size:13px;font-weight:600;margin-top:10px;min-height:18px}
+  @keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-7px)}40%,80%{transform:translateX(7px)}}
+  .lock-card.shake{animation:shake .4s}
   .lock-remember{display:flex;align-items:center;justify-content:center;gap:7px;font-size:12px;color:#7d8276;margin-top:14px;cursor:pointer}
   .lock-remember input{width:auto;accent-color:#2c3a2c}
   body.locked{overflow:hidden}
@@ -443,10 +445,10 @@
 <div id="toasts" aria-live="polite"></div>
 <div id="lockScreen">
   <div class="lock-card">
-    <svg width="64" height="45" viewBox="0 0 100 70" style="margin-bottom:4px"><path d="M6 44 C12.667 28 20.667 18.667 30 16 C38 17.333 44.667 22 50 30 C55.333 22 62 17.333 70 16 C79.333 18.667 87.333 28 94 44 q-4.4 8 -8.8 0 q-4.4 8 -8.8 0 q-4.4 8 -8.8 0 q-4.4 8 -8.8 0 q-4.4 8 -8.8 0 q-4.4 8 -8.8 0 q-4.4 8 -8.8 0 q-4.4 8 -8.8 0 q-4.4 8 -8.8 0 q-4.4 8 -8.8 0 Z" fill="#2c3a2c"/><path d="M30 8 L38 10.5 L30 13 Z" fill="#2c3a2c"/><path d="M70 8 L62 10.5 L70 13 Z" fill="#2c3a2c"/><g stroke="#2c3a2c" stroke-width="2.6" stroke-linecap="round" fill="none"><path d="M30 16 L30 8"/><path d="M70 16 L70 8"/><path d="M12 50 L12 66"/><path d="M50 49 L50 66"/><path d="M88 50 L88 66"/><path d="M7 66 L93 66"/></g></svg>
+    <svg width="60" height="42" viewBox="0 0 100 70" style="margin-bottom:4px"><path d="M8 46 C16 26 30 16 50 13 C70 16 84 26 92 46 q-4.2 8 -8.4 0 q-4.2 8 -8.4 0 q-4.2 8 -8.4 0 q-4.2 8 -8.4 0 q-4.2 8 -8.4 0 q-4.2 8 -8.4 0 q-4.2 8 -8.4 0 q-4.2 8 -8.4 0 q-4.2 8 -8.4 0 q-4.2 8 -8.4 0 Z" fill="#2c3a2c"/><path d="M50 5 L59 7.5 L50 10 Z" fill="#2c3a2c"/><g stroke="#2c3a2c" stroke-width="2.6" stroke-linecap="round" fill="none"><path d="M50 13 L50 5"/><path d="M13 50 L13 66"/><path d="M50 50 L50 66"/><path d="M87 50 L87 66"/><path d="M8 66 L92 66"/></g></svg>
     <h1>Maison Béthanie</h1>
     <p>Enter passcode to continue</p>
-    <input type="password" id="lockInput" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="Passcode" onkeydown="if(event.key==='Enter')tryUnlock()">
+    <input type="password" id="lockInput" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="Passcode" oninput="document.getElementById('lockErr').textContent=''" onkeydown="if(event.key==='Enter')tryUnlock()">
     <button class="lock-btn" onclick="tryUnlock()">Unlock</button>
     <div id="lockErr" class="lock-err"></div>
     <label class="lock-remember"><input type="checkbox" id="lockRemember" checked> Stay unlocked on this device</label>
@@ -457,7 +459,7 @@
 <div class="app">
 <aside class="sidebar">
   <div class="side-brand">
-    <svg width="42" height="30" viewBox="0 0 100 70" style="flex:0 0 auto"><path d="M6 44 C12.667 28 20.667 18.667 30 16 C38 17.333 44.667 22 50 30 C55.333 22 62 17.333 70 16 C79.333 18.667 87.333 28 94 44 q-4.4 8 -8.8 0 q-4.4 8 -8.8 0 q-4.4 8 -8.8 0 q-4.4 8 -8.8 0 q-4.4 8 -8.8 0 q-4.4 8 -8.8 0 q-4.4 8 -8.8 0 q-4.4 8 -8.8 0 q-4.4 8 -8.8 0 q-4.4 8 -8.8 0 Z" fill="#d8bd7e"/><path d="M30 8 L38 10.5 L30 13 Z" fill="#d8bd7e"/><path d="M70 8 L62 10.5 L70 13 Z" fill="#d8bd7e"/><g stroke="#d8bd7e" stroke-width="2.6" stroke-linecap="round" fill="none"><path d="M30 16 L30 8"/><path d="M70 16 L70 8"/><path d="M12 50 L12 66"/><path d="M50 49 L50 66"/><path d="M88 50 L88 66"/><path d="M7 66 L93 66"/></g></svg>
+    <svg width="40" height="30" viewBox="0 0 100 70" style="flex:0 0 auto"><path d="M8 46 C16 26 30 16 50 13 C70 16 84 26 92 46 q-4.2 8 -8.4 0 q-4.2 8 -8.4 0 q-4.2 8 -8.4 0 q-4.2 8 -8.4 0 q-4.2 8 -8.4 0 q-4.2 8 -8.4 0 q-4.2 8 -8.4 0 q-4.2 8 -8.4 0 q-4.2 8 -8.4 0 q-4.2 8 -8.4 0 Z" fill="#d8bd7e"/><path d="M50 5 L59 7.5 L50 10 Z" fill="#d8bd7e"/><g stroke="#d8bd7e" stroke-width="2.6" stroke-linecap="round" fill="none"><path d="M50 13 L50 5"/><path d="M13 50 L13 66"/><path d="M50 50 L50 66"/><path d="M87 50 L87 66"/><path d="M8 66 L92 66"/></g></svg>
     <div style="line-height:1.05">
       <b style="font-family:'Cormorant Garamond',serif;font-weight:600;font-size:19px;letter-spacing:.3px">Maison Béthanie</b>
       <div style="font-size:9px;letter-spacing:2px;color:#d8bd7e;margin-top:3px">WEDDINGS · KIGALI</div>
@@ -1250,7 +1252,9 @@ async function tryUnlock(){
     (document.getElementById('lockRemember').checked?localStorage:sessionStorage).setItem('mb_unlocked','1');
     closeLock();
   }else{
-    document.getElementById('lockErr').textContent='Incorrect passcode. Try again.';
+    document.getElementById('lockErr').textContent='❌ Wrong passcode. Please try again.';
+    const card=document.querySelector('.lock-card');
+    card.classList.remove('shake');void card.offsetWidth;card.classList.add('shake');
     inp.value='';inp.focus();
   }
 }
@@ -1284,7 +1288,9 @@ if('Notification' in window&&Notification.permission==='granted')setTimeout(subs
 
 /* ---------- PWA: register service worker for offline + install ---------- */
 if('serviceWorker' in navigator){
-  window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+  let _refreshing=false;
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{if(_refreshing)return;_refreshing=true;location.reload();});
+  window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').then(reg=>reg.update()).catch(()=>{}));
 }
 
 /* ---------- PWA: install / "download" the app ---------- */
