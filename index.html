@@ -1659,7 +1659,8 @@ function openReceipt(id){
   const issued=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
   const pays=(w.payments||[]).slice().sort((a,b)=>(a.date||'').localeCompare(b.date||''));
   const rows=pays.length?pays.map(p=>`<div class="rc-row"><span>${fmtDate(p.date)} · ${escapeHtml(p.method||'cash')}</span><b>${fmtMoney(p.amount)}</b></div>`).join(''):'<div class="rc-row" style="color:#999">No payments recorded yet<b></b></div>';
-  const firstName=(w.couple||'').split(/\s*[&,]\s*|\s+and\s+/i)[0]||w.couple;
+  const _cap=s=>String(s||'').replace(/\b\w/g,c=>c.toUpperCase());
+  const firstName=_cap((w.couple||'').split(/\s*[&,]\s*|\s+and\s+/i)[0]||w.couple);
   const qr=qrSvg(VENUE_MAP);
   document.getElementById('receiptPaper').innerHTML=
     '<div class="rc">'+
