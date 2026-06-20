@@ -55,6 +55,11 @@ Deno.serve(async (req) => {
     return Response.json({ ok: true, sent });
   }
 
+  if (mode === "receipt") {
+    const sent = await sendToAll({ title: "🧾 Receipt issued", body: (body.message as string) || "A booking receipt was issued.", tag: "receipt-" + Date.now(), url: "./" });
+    return Response.json({ ok: true, sent });
+  }
+
   // mode = daily
   const today = new Date().toISOString().slice(0, 10);
   const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
