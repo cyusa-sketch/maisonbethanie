@@ -407,6 +407,34 @@
   body.role-monitor .mgr-only{display:none!important}
   .role-badge{display:none;align-items:center;gap:5px;background:#d8bd7e;color:#2c2410;font-size:11px;font-weight:800;padding:6px 11px;border-radius:20px;align-self:center;white-space:nowrap}
 
+  /* ===== money insights ===== */
+  .ins-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+  .ins-stat{background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:14px 15px}
+  body.dark .ins-stat{background:rgba(33,30,26,.5)}
+  .ins-label{font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);font-weight:800}
+  .ins-val{font-size:19px;font-weight:800;margin-top:6px;color:#3f6b4f}
+  .ins-change{display:inline-block;font-size:11.5px;font-weight:800;margin-top:5px;padding:2px 8px;border-radius:20px}
+  .ins-change.up{color:#2f5a3e;background:#e3efe4}.ins-change.down{color:#9a2a22;background:#f6e7e3}.ins-change.flat{color:var(--muted);background:var(--line)}
+  body.dark .ins-change.up{background:#1e3328}body.dark .ins-change.down{background:#3a221f}
+  .ins-sub{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin:4px 0 12px}
+  .chart-bars{display:flex;align-items:flex-end;gap:7px;height:130px}
+  .cbar{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;height:100%;justify-content:flex-end;min-width:0}
+  .cbar .bar{width:100%;max-width:32px;background:linear-gradient(180deg,#e0c98a,#c0a25f);border-radius:7px 7px 0 0;min-height:3px;transition:height .6s cubic-bezier(.2,.8,.3,1)}
+  .cbar.cur .bar{background:linear-gradient(180deg,#5a7a52,#3f6b4f)}
+  .cbar .clabel{font-size:10px;color:var(--muted);font-weight:700}
+  .ins-cols{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:22px}
+  .lead{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+  .lead:last-child{border:none}
+  .lead .rank{width:23px;height:23px;flex:0 0 auto;border-radius:50%;background:var(--sage);color:#2c2410;font-size:11px;font-weight:800;display:grid;place-items:center}
+  .lead .lname{flex:1;font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .lead .lamt{font-size:12.5px;font-weight:800;color:#3f6b4f;white-space:nowrap}
+  .tbar{margin:9px 0}
+  .tbar .tlabel{display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;gap:8px}
+  .tbar .tlabel b{font-weight:800;color:#3f6b4f;white-space:nowrap}
+  .tbar .ttrack{height:9px;background:var(--line);border-radius:6px;overflow:hidden}
+  .tbar .tfill{height:100%;background:linear-gradient(90deg,#e0c98a,#c0a25f);border-radius:6px;transition:width .6s ease}
+  @media(max-width:600px){.ins-stats{grid-template-columns:1fr}.ins-cols{grid-template-columns:1fr;gap:14px}.chart-bars{height:110px}}
+
   /* ===== animated background orbs ===== */
   .bg-orbs{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0}
   .orb{position:absolute;border-radius:50%;filter:blur(64px);opacity:.55;animation:drift 24s ease-in-out infinite}
@@ -535,6 +563,10 @@
           <p class="muted" id="greetSub"></p>
         </div>
         <div class="tiles" id="tiles"></div>
+        <div class="panel">
+          <div class="panel-head"><h2>💰 Money insights</h2><span id="insRange" class="linkbtn" style="cursor:default"></span></div>
+          <div id="insights"></div>
+        </div>
         <div class="panel">
           <div class="panel-head"><h2>📅 Upcoming Weddings</h2><button class="linkbtn" onclick="switchView('bookings')">Show all</button></div>
           <div id="upcomingList"></div>
@@ -849,8 +881,57 @@ function renderDashboard(){
         <td class="right nowrap" data-label="Received">${fmtMoney(paid(w))}</td>
         </tr>`}).join('')+'</tbody></table></div>';}
 
+  renderInsights();
   renderMiniCal();
   renderTimeline();
+}
+
+/* ===== smart money insights ===== */
+function renderInsights(){
+  const el=document.getElementById('insights');if(!el)return;
+  const today=todayStr(), now=new Date();
+  const active=DB.filter(w=>w.status!=='cancelled');
+  const pays=[];active.forEach(w=>(w.payments||[]).forEach(p=>pays.push({amount:+p.amount||0,date:p.date||'',couple:w.couple,type:w.eventType||'Event'})));
+  const sum=arr=>arr.reduce((a,p)=>a+p.amount,0);
+  if(!pays.length){el.innerHTML='<div class="empty"><div class="big">💸</div>No payments recorded yet.<br><span class="muted">Add payments to bookings and your money insights will appear here.</span></div>';document.getElementById('insRange').textContent='';return;}
+
+  const curKey=today.slice(0,7);
+  const lm=new Date(now.getFullYear(),now.getMonth()-1,1);
+  const lastKey=`${lm.getFullYear()}-${String(lm.getMonth()+1).padStart(2,'0')}`;
+  const thisMonth=sum(pays.filter(p=>p.date.slice(0,7)===curKey));
+  const lastMonth=sum(pays.filter(p=>p.date.slice(0,7)===lastKey));
+  const ytd=sum(pays.filter(p=>p.date.slice(0,4)===String(now.getFullYear())));
+  const total=sum(pays);
+  const paidBk=active.filter(w=>paid(w)>0).length;
+  const avg=paidBk?Math.round(total/paidBk):0;
+  let pct=lastMonth>0?Math.round((thisMonth-lastMonth)/lastMonth*100):(thisMonth>0?100:0);
+  const cls=pct>0?'up':(pct<0?'down':'flat');
+  const arrow=pct>0?'▲':(pct<0?'▼':'■');
+
+  const months=[];for(let i=7;i>=0;i--){const d=new Date(now.getFullYear(),now.getMonth()-i,1);months.push({key:`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`,label:d.toLocaleDateString('en-GB',{month:'short'})});}
+  const series=months.map(m=>({label:m.label,val:sum(pays.filter(p=>p.date.slice(0,7)===m.key)),cur:m.key===curKey}));
+  const maxV=Math.max(1,...series.map(s=>s.val));
+
+  const byClient={};active.forEach(w=>{const v=paid(w);if(v>0)byClient[w.couple]=(byClient[w.couple]||0)+v;});
+  const top=Object.entries(byClient).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const byType={};active.forEach(w=>{const v=paid(w);if(v>0){const t=w.eventType||'Event';byType[t]=(byType[t]||0)+v;}});
+  const types=Object.entries(byType).sort((a,b)=>b[1]-a[1]);
+  const maxT=Math.max(1,...types.map(t=>t[1]));
+
+  document.getElementById('insRange').textContent='all time · RWF '+total.toLocaleString('en-US');
+
+  el.innerHTML=
+    '<div class="ins-stats">'+
+      `<div class="ins-stat"><div class="ins-label">This month</div><div class="ins-val">${fmtMoney(thisMonth)}</div><div class="ins-change ${cls}">${arrow} ${Math.abs(pct)}% vs last month</div></div>`+
+      `<div class="ins-stat"><div class="ins-label">Year to date ${now.getFullYear()}</div><div class="ins-val">${fmtMoney(ytd)}</div><div class="ins-change flat">${pays.filter(p=>p.date.slice(0,4)==String(now.getFullYear())).length} payments</div></div>`+
+      `<div class="ins-stat"><div class="ins-label">Avg / booking</div><div class="ins-val">${fmtMoney(avg)}</div><div class="ins-change flat">${paidBk} paying client${paidBk===1?'':'s'}</div></div>`+
+    '</div>'+
+    '<div class="ins-sub">Income — last 8 months</div>'+
+    '<div class="chart-bars">'+series.map(s=>`<div class="cbar${s.cur?' cur':''}" title="${s.label}: ${fmtMoney(s.val)}"><div class="bar" style="height:${Math.round(s.val/maxV*100)}%"></div><div class="clabel">${s.label}</div></div>`).join('')+'</div>'+
+    '<div class="ins-cols">'+
+      '<div><div class="ins-sub">🏆 Top clients</div>'+(top.length?top.map(([n,v],i)=>`<div class="lead"><div class="rank">${i+1}</div><div class="lname">${escapeHtml(n)}</div><div class="lamt">${fmtMoney(v)}</div></div>`).join(''):'<div class="muted" style="font-size:13px">No data yet</div>')+'</div>'+
+      '<div><div class="ins-sub">🎉 Income by event type</div>'+(types.length?types.map(([t,v])=>`<div class="tbar"><div class="tlabel"><span>${escapeHtml(t)}</span><b>${fmtMoney(v)}</b></div><div class="ttrack"><div class="tfill" style="width:${Math.round(v/maxT*100)}%"></div></div></div>`).join(''):'<div class="muted" style="font-size:13px">No data yet</div>')+'</div>'+
+    '</div>';
 }
 
 /* mini calendar on the dashboard rail */
