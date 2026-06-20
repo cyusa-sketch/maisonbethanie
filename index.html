@@ -1235,7 +1235,7 @@ if(DB.length===0&&!localStorage.getItem(KEY)){
 function initPetals(){
   if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion:reduce)').matches)return;
   const wrap=document.getElementById('petals');
-  const glyphs=['💍','🥂','💞','🔔','🕊️','✨','💒','💝','🤍'];
+  const glyphs=['💵','💰','💸','🤑','💴','💶','💷','🪙'];
   const n=window.innerWidth<600?7:12;
   for(let i=0;i<n;i++){
     const p=document.createElement('span');
@@ -1269,8 +1269,8 @@ function celebrate(){
 }
 
 /* ---------- passcode lock ---------- */
-const PASS_MANAGER='b6f6722269990caaba1d4a4f17ee269c97d4006a8ffd46502ba2bd04ca114f27';
-const PASS_MONITOR='d5202e6904b89534425e3e52d9173445bf493805ad2c40edddd1529d497cde18';
+const PASS_MANAGER='2e064c30dfe840ff76432c401a0d0c19f0b30d823f60fd378353a6a63e431e75';
+const PASS_MONITOR='04854bf4dd65c43a7c86d29434f44eb1485d840995827470f6300a04919d20a3';
 async function _sha(s){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');}
 function getRole(){
   const r=localStorage.getItem('mb_role')||sessionStorage.getItem('mb_role');
