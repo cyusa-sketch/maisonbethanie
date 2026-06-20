@@ -1305,6 +1305,9 @@ function saveBooking(){
   const date=document.getElementById('f_date').value;
   if(!couple){alert('Please enter the couple / client name.');return}
   if(!date){alert('Please enter the wedding date.');return}
+  // auto-capture a payment that was typed but not yet "+ Added"
+  const _pa=Number(document.getElementById('payAmount').value);
+  if(_pa>0){editingPayments.push({amount:_pa,date:document.getElementById('payDate').value||todayStr(),method:document.getElementById('payMethod').value.trim()});document.getElementById('payAmount').value='';document.getElementById('payMethod').value='';}
   const id=document.getElementById('f_id').value;
   // block dates that have already passed (but allow editing a historical booking that already had a past date)
   const existing=id?DB.find(w=>w.id===id):null;
@@ -1341,6 +1344,7 @@ function saveBooking(){
     toast('New booking added 🎉',rec.couple+' · '+dateLabel(rec),'success');
     systemNotify('New booking',rec.couple+' · '+dateLabel(rec));
     celebrate();
+    setTimeout(()=>openReceipt(rec.id),500); // booking confirmed → receipt comes along
   }else{
     toast('Booking updated',rec.couple+' · '+dateLabel(rec),'info');
   }
