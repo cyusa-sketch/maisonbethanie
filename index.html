@@ -488,6 +488,22 @@
   .tbar .tfill{height:100%;background:linear-gradient(90deg,#e0c98a,#c0a25f);border-radius:6px;transition:width .6s ease}
   @media(max-width:600px){.ins-stats{grid-template-columns:1fr}.ins-cols{grid-template-columns:1fr;gap:14px}.chart-bars{height:110px}}
 
+  /* ===== motel rooms ===== */
+  .rooms-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px}
+  .room{border:1px solid var(--line);border-radius:16px;padding:15px;background:var(--bg);position:relative;transition:transform .15s,box-shadow .2s}
+  body.dark .room{background:rgba(33,30,26,.5)}
+  .room:hover{transform:translateY(-3px);box-shadow:var(--shadow)}
+  .room .rm-name{font-weight:800;font-size:15px;color:#2c3a2c;display:flex;align-items:center;gap:7px}
+  body.dark .room .rm-name{color:#d8bd7e}
+  .room .rm-dot{width:9px;height:9px;border-radius:50%}
+  .rm-dot.occ{background:#3f6b4f}.rm-dot.vac{background:#b9b3a3}
+  .room .rm-tenant{font-size:14px;font-weight:600;margin-top:8px}
+  .room .rm-info{font-size:12px;color:var(--muted);margin-top:2px}
+  .room .rm-status{margin-top:10px}
+  .room .rm-actions{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap}
+  .room.vacant{border-style:dashed;opacity:.92}
+  .room .rm-vac{font-size:13px;color:var(--muted);margin-top:8px;font-style:italic}
+
   /* ===== animated background orbs ===== */
   .bg-orbs{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0}
   .orb{position:absolute;border-radius:50%;filter:blur(64px);opacity:.55;animation:drift 24s ease-in-out infinite}
@@ -571,6 +587,8 @@
   <button class="navitem" data-view="check"><span class="ic"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg></span><span class="lbl">Check a Date</span></button>
   <button class="navitem" data-view="bookings"><span class="ic"><svg viewBox="0 0 24 24"><line x1="9" y1="6" x2="21" y2="6"/><line x1="9" y1="12" x2="21" y2="12"/><line x1="9" y1="18" x2="21" y2="18"/><circle cx="4" cy="6" r="1.4" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="4" cy="18" r="1.4" fill="currentColor" stroke="none"/></svg></span><span class="lbl">Bookings</span></button>
   <button class="navitem" data-view="calendar"><span class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="8" y1="2.5" x2="8" y2="6"/><line x1="16" y1="2.5" x2="16" y2="6"/></svg></span><span class="lbl">Calendar</span></button>
+  <div class="side-label">Motel · Rentals</div>
+  <button class="navitem" data-view="motel"><span class="ic"><svg viewBox="0 0 24 24"><path d="M3 21V9l9-6 9 6v12"/><path d="M9 21v-6h6v6"/></svg></span><span class="lbl">Apartments</span></button>
   <div class="side-label">Tools</div>
   <button class="navitem" onclick="exportData()"><span class="ic"><svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg></span><span class="lbl">Backup</span></button>
   <button class="navitem mgr-only" onclick="document.getElementById('importFile').click()"><span class="ic"><svg viewBox="0 0 24 24"><path d="M12 21V9"/><path d="M7 14l5-5 5 5"/><path d="M5 3h14"/></svg></span><span class="lbl">Restore</span></button>
@@ -688,6 +706,27 @@
       <div class="cal-grid" id="calGrid"></div>
     </div>
   </section>
+
+  <!-- MOTEL / APARTMENTS -->
+  <section class="view" id="motel">
+    <div class="dash">
+      <div class="dash-main">
+        <div class="greeting">
+          <h1>🏠 Apartments</h1>
+          <p class="muted" id="motelSub"></p>
+        </div>
+        <div class="cards" id="motelStats"></div>
+        <div class="panel">
+          <div class="panel-head"><h2>🛏️ Rooms</h2><span class="muted" style="font-size:12px" id="motelMonth"></span></div>
+          <div id="roomsGrid" class="rooms-grid"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h2>💵 Rent — this month</h2></div>
+          <div id="rentTable"></div>
+        </div>
+      </div>
+    </div>
+  </section>
 </main>
 </div><!-- /.content -->
 </div><!-- /.app -->
@@ -798,6 +837,49 @@
   </div>
 </div>
 
+<!-- TENANT MODAL -->
+<div class="overlay" id="tenantOverlay">
+  <div class="modal">
+    <div class="modal-head"><h2 id="tenantTitle">Assign tenant</h2><button class="x" onclick="closeTenant()">×</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="t_id">
+      <div class="grid2">
+        <div class="field block"><label>Room *</label>
+          <select id="t_unit"></select>
+        </div>
+        <div class="field block"><label>Status</label>
+          <select id="t_status"><option value="active">Active (occupied)</option><option value="ended">Ended (moved out)</option></select>
+        </div>
+        <div class="field block"><label>Tenant name *</label><input id="t_tenant" placeholder="e.g. John Doe"></div>
+        <div class="field block"><label>Phone</label><input id="t_phone" placeholder="07X XXX XXXX"></div>
+        <div class="field block"><label>Monthly rent (RWF) *</label><input type="number" min="0" id="t_rent" placeholder="e.g. 150000"></div>
+        <div class="field block"><label>Move-in date</label><input type="date" id="t_start"></div>
+        <div class="field block"><label>Number of occupants</label><input type="number" min="0" id="t_guests" placeholder="e.g. 2"></div>
+        <div class="field block"><label>ID / Passport No.</label><input id="t_idno" placeholder="National ID or passport"></div>
+        <div class="field block full"><label>Notes</label><textarea id="t_notes" rows="2" placeholder="Requests, car plate, deposit held…"></textarea></div>
+      </div>
+      <div id="rentBlock" style="margin-top:18px">
+        <h3 style="font-size:14px;margin-bottom:6px">Rent payments</h3>
+        <div id="rentMeta" class="hint"></div>
+        <div class="pay-list" id="rentList"></div>
+        <div class="pay-add mgr-only">
+          <input id="rp_month" type="month">
+          <input type="number" min="0" id="rp_amount" placeholder="Amount (RWF)">
+          <input id="rp_method" placeholder="Method (cash, MoMo…)" style="flex:1 1 120px">
+          <button class="btn sm" onclick="addRent()">+ Add</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn danger mgr-only" id="tenantDeleteBtn" onclick="deleteTenant()">Delete</button>
+      <div style="display:flex;gap:10px;margin-left:auto">
+        <button class="btn ghost" onclick="closeTenant()">Close</button>
+        <button class="btn mgr-only" onclick="saveTenant()">Save tenant</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const KEY='maisonbethanie_weddings_v1';
@@ -842,8 +924,12 @@ async function cloudPull(){
   // announce bookings added from another device since last sync
   if(window._knownIds){
     DB.filter(w=>!window._knownIds.has(w.id)).forEach(w=>{
-      toast('New booking synced','From another device · '+w.couple+' · '+dateLabel(w),'success');
-      systemNotify('New booking',w.couple+' · '+dateLabel(w));
+      if(w.kind==='motel'){
+        toast('Tenant synced 🏠','From another device · '+(w.unit||'')+' · '+(w.tenant||''),'success');
+      }else{
+        toast('New booking synced','From another device · '+(w.couple||'')+' · '+dateLabel(w),'success');
+        systemNotify('New booking',(w.couple||'')+' · '+dateLabel(w));
+      }
     });
   }
   window._knownIds=new Set(DB.map(w=>w.id));
@@ -872,6 +958,9 @@ function isMulti(w){return endOf(w)!==w.date}
 function isPast(w){return endOf(w)<todayStr()&&w.status!=='cancelled'}
 function covers(w,ds){return ds>=w.date&&ds<=endOf(w)}
 function dateLabel(w){return isMulti(w)?fmtDate(w.date)+' → '+fmtDate(endOf(w)):fmtDate(w.date)}
+/* split data: weddings vs motel rentals (same table, kind discriminator) */
+function weds(){return DB.filter(w=>(w.kind||'wedding')!=='motel')}
+function rentals(){return DB.filter(w=>w.kind==='motel')}
 const STATUS_LABEL={confirmed:'Confirmed',tentative:'Tentative',done:'Completed',cancelled:'Cancelled'};
 const STATUS_BADGE={confirmed:'paid',tentative:'partial',done:'done',cancelled:'unpaid'};
 
@@ -882,6 +971,7 @@ function switchView(view){
   if(view==='dashboard')renderDashboard();
   if(view==='bookings')renderBookings();
   if(view==='calendar')renderCalendar();
+  if(view==='motel')renderMotel();
   window.scrollTo({top:0,behavior:'smooth'});
 }
 document.querySelectorAll('.navitem[data-view]').forEach(t=>t.onclick=()=>switchView(t.dataset.view));
@@ -900,7 +990,7 @@ let miniRef=new Date();
 function renderDashboard(){
   const today=todayStr();
   const now=new Date();
-  const active=DB.filter(w=>w.status!=='cancelled');
+  const active=weds().filter(w=>w.status!=='cancelled');
   const upcoming=active.filter(w=>endOf(w)>=today&&w.status!=='done');
   const past=active.filter(w=>endOf(w)<today);
   const totalRevenue=active.reduce((a,w)=>a+paid(w),0);
@@ -959,7 +1049,7 @@ function renderDashboard(){
 function renderInsights(){
   const el=document.getElementById('insights');if(!el)return;
   const today=todayStr(), now=new Date();
-  const active=DB.filter(w=>w.status!=='cancelled');
+  const active=weds().filter(w=>w.status!=='cancelled');
   const pays=[];active.forEach(w=>(w.payments||[]).forEach(p=>pays.push({amount:+p.amount||0,date:p.date||'',couple:w.couple,type:w.eventType||'Event'})));
   const sum=arr=>arr.reduce((a,p)=>a+p.amount,0);
   if(!pays.length){el.innerHTML='<div class="empty"><div class="big">💸</div>No payments recorded yet.<br><span class="muted">Add payments to bookings and your money insights will appear here.</span></div>';document.getElementById('insRange').textContent='';return;}
@@ -1013,7 +1103,7 @@ function renderMiniCal(){
   for(let i=0;i<first;i++)html+='<div></div>';
   for(let d=1;d<=days;d++){
     const ds=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const booked=DB.some(w=>covers(w,ds)&&w.status!=='cancelled');
+    const booked=weds().some(w=>covers(w,ds)&&w.status!=='cancelled');
     html+=`<div class="mc-day${ds===today?' today':''}${booked?' booked':''}" onclick="miniPick('${ds}')" title="${booked?'Booked':'Available'}">${d}</div>`;
   }
   document.getElementById('miniCal').innerHTML=html;
@@ -1027,7 +1117,7 @@ function miniPick(ds){
 /* dashboard rail timeline */
 function renderTimeline(){
   const today=todayStr();
-  const items=DB.filter(w=>endOf(w)>=today&&w.status!=='cancelled').sort((a,b)=>a.date.localeCompare(b.date)).slice(0,6);
+  const items=weds().filter(w=>endOf(w)>=today&&w.status!=='cancelled').sort((a,b)=>a.date.localeCompare(b.date)).slice(0,6);
   const colors={'Wedding':'#2c3a2c','Civil wedding':'#c9a85a','Traditional (Gusaba)':'#8a7a2a','Engagement':'#6f8a64','Birthday':'#d8bd7e','Corporate event':'#5d7a55'};
   const el=document.getElementById('timeline');
   if(!items.length){el.innerHTML='<div class="muted" style="font-size:13px;padding:6px 0">No upcoming events. Click ＋ Add event.</div>';return}
@@ -1050,7 +1140,7 @@ function checkDate(){
   const d=document.getElementById('checkDate').value;
   const res=document.getElementById('checkResult');
   if(!d){res.className='result busy';res.innerHTML='Please pick a date first.';return}
-  const clash=DB.filter(w=>covers(w,d)&&w.status!=='cancelled');
+  const clash=weds().filter(w=>covers(w,d)&&w.status!=='cancelled');
   if(clash.length){
     res.className='result busy';
     res.innerHTML='⛔ BOOKED on '+fmtDate(d)+'.<div class="detail">'+
@@ -1073,7 +1163,7 @@ function renderBookings(){
   const filter=document.getElementById('filterStatus').value;
   const sort=document.getElementById('sortBy').value;
   const today=todayStr();
-  let rows=DB.filter(w=>{
+  let rows=weds().filter(w=>{
     const hay=(w.couple+' '+(w.phone||'')+' '+(w.hall||'')+' '+(w.package||'')+' '+(w.eventType||'')).toLowerCase();
     if(q&&!hay.includes(q))return false;
     if(filter==='upcoming'&&!(endOf(w)>=today&&w.status!=='cancelled'))return false;
@@ -1231,7 +1321,7 @@ function saveBooking(){
   // warn on double-booking — any overlap with another active booking's date range
   const status=document.getElementById('f_status').value;
   if(status!=='cancelled'){
-    const clash=DB.find(w=>w.id!==id&&w.status!=='cancelled'&&date<=endOf(w)&&endDate>=w.date);
+    const clash=weds().find(w=>w.id!==id&&w.status!=='cancelled'&&date<=endOf(w)&&endDate>=w.date);
     if(clash&&!confirm('⚠ Those dates overlap an existing booking for "'+clash.couple+'" ('+dateLabel(clash)+').\n\nDo you still want to save this booking?'))return;
   }
   const rec={
@@ -1277,7 +1367,7 @@ function renderCalendar(){
   for(let i=0;i<first;i++)html+='<div class="cal-cell empty"></div>';
   for(let d=1;d<=days;d++){
     const ds=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const evs=DB.filter(w=>covers(w,ds)&&w.status!=='cancelled');
+    const evs=weds().filter(w=>covers(w,ds)&&w.status!=='cancelled');
     html+=`<div class="cal-cell${ds===today?' today':''}"><div class="cal-day">${d}</div>`+
       evs.map(w=>{const tag=isMulti(w)?(ds===w.date?'▶ ':(ds===endOf(w)?'◀ ':'• ')):'';
         return `<div class="cal-ev ${w.status==='done'?'done':''}" onclick="openForm('${w.id}')" title="${escapeHtml(w.couple)} (${dateLabel(w)})">${tag}${escapeHtml(w.couple)}</div>`}).join('')+
@@ -1312,7 +1402,7 @@ function importData(input){
 }
 
 function escapeHtml(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function refreshAll(){renderDashboard();renderBookings();renderCalendar();renderNotifs();}
+function refreshAll(){renderDashboard();renderBookings();renderCalendar();renderNotifs();if(document.getElementById('roomsGrid'))renderMotel();}
 
 /* ================= NOTIFICATIONS ================= */
 function toast(title,body,type){
@@ -1325,7 +1415,7 @@ function toast(title,body,type){
 }
 
 function buildNotifications(){
-  const today=todayStr(),now=new Date(),active=DB.filter(w=>w.status!=='cancelled'),list=[];
+  const today=todayStr(),now=new Date(),active=weds().filter(w=>w.status!=='cancelled'),list=[];
   const days=w=>Math.ceil((new Date(w.date)-new Date(today))/86400000);
   active.filter(w=>covers(w,today)&&w.status!=='done').forEach(w=>list.push({alert:true,ico:'💍',title:'Event today: '+w.couple,body:(w.eventType||'Event')+(w.hall?' · '+w.hall:''),id:w.id}));
   active.filter(w=>w.date>today&&days(w)<=7&&w.status!=='done').sort((a,b)=>a.date.localeCompare(b.date)).forEach(w=>list.push({alert:true,ico:'⏰',title:'In '+days(w)+' day'+(days(w)>1?'s':'')+': '+w.couple,body:dateLabel(w)+(w.hall?' · '+w.hall:''),id:w.id}));
@@ -1384,7 +1474,7 @@ function systemNotify(title,body){
 }
 function notifyTodaysEvents(){
   const today=todayStr();
-  const todays=DB.filter(w=>covers(w,today)&&w.status!=='cancelled'&&w.status!=='done');
+  const todays=weds().filter(w=>covers(w,today)&&w.status!=='cancelled'&&w.status!=='done');
   todays.forEach(w=>{toast('Happening today 💍',w.couple+(w.hall?' · '+w.hall:''),'success');systemNotify('Event today',w.couple+(w.hall?' · '+w.hall:''));});
 }
 
@@ -1431,6 +1521,121 @@ function celebrate(){
     c.style.animationDuration=(1.1+Math.random()*.9)+'s';
     box.appendChild(c);
     setTimeout(()=>c.remove(),2200);
+  }
+}
+
+/* ================= MOTEL / APARTMENTS ================= */
+const ROOMS=['Room 1','Room 2','Room 3','Room 4','Room 5','Room 6','Room 7'];
+let editingRent=[];
+function monthName(k){const a=(k||'').split('-');return a.length<2?'':new Date(+a[0],+a[1]-1,1).toLocaleDateString('en-GB',{month:'long',year:'numeric'});}
+function rentPaidFor(r,key){return (r.payments||[]).filter(p=>(p.month||'')===key).reduce((a,p)=>a+(+p.amount||0),0);}
+
+function renderMotel(){
+  const cur=todayStr().slice(0,7);
+  const active=rentals().filter(r=>r.status!=='ended');
+  const occupied=ROOMS.filter(room=>active.some(r=>r.unit===room)).length;
+  const expected=active.reduce((a,r)=>a+(+r.rent||0),0);
+  const collected=active.reduce((a,r)=>a+rentPaidFor(r,cur),0);
+  const outstanding=active.reduce((a,r)=>a+Math.max(0,(+r.rent||0)-rentPaidFor(r,cur)),0);
+  document.getElementById('motelSub').textContent=`${occupied} of ${ROOMS.length} rooms occupied · ${outstanding>0?fmtMoney(outstanding)+' still due this month':'all rent collected this month 🎉'}`;
+  document.getElementById('motelMonth').textContent=monthName(cur);
+  document.getElementById('motelStats').innerHTML=
+    `<div class="stat"><div class="label">Occupied</div><div class="value gold">${occupied}/${ROOMS.length}</div><div class="sub">${ROOMS.length-occupied} vacant</div></div>`+
+    `<div class="stat"><div class="label">Expected / month</div><div class="value" style="font-size:21px">${fmtMoney(expected)}</div><div class="sub">from ${active.length} tenant${active.length===1?'':'s'}</div></div>`+
+    `<div class="stat"><div class="label">Collected this month</div><div class="value green" style="font-size:21px">${fmtMoney(collected)}</div><div class="sub">${monthName(cur)}</div></div>`+
+    `<div class="stat"><div class="label">Outstanding</div><div class="value red" style="font-size:21px">${fmtMoney(outstanding)}</div><div class="sub">still to collect</div></div>`;
+  document.getElementById('roomsGrid').innerHTML=ROOMS.map(room=>{
+    const r=active.find(x=>x.unit===room);
+    if(!r)return `<div class="room vacant"><div class="rm-name"><span class="rm-dot vac"></span>${room}</div><div class="rm-vac">Vacant</div><div class="rm-actions"><button class="btn sm mgr-only" onclick="openTenant('${room}')">+ Assign tenant</button></div></div>`;
+    const owes=Math.max(0,(+r.rent||0)-rentPaidFor(r,cur));
+    const badge=owes<=0?'<span class="badge paid">Paid</span>':'<span class="badge unpaid">Owes '+fmtMoney(owes)+'</span>';
+    return `<div class="room"><div class="rm-name"><span class="rm-dot occ"></span>${room}</div><div class="rm-tenant">${escapeHtml(r.tenant)}</div><div class="rm-info">${fmtMoney(r.rent)}/mo${r.guests?' · '+escapeHtml(String(r.guests))+' pax':''}</div><div class="rm-status">${badge}</div><div class="rm-actions"><button class="iconbtn" title="Manage" onclick="openTenant('${r.id}')">✎ Manage</button></div></div>`;
+  }).join('');
+  const el=document.getElementById('rentTable');
+  if(!active.length){el.innerHTML='<div class="empty"><div class="big">🛏️</div>No tenants yet. Assign a tenant to a room above.</div>';return;}
+  el.innerHTML='<div class="table-wrap"><table class="rtable"><thead><tr><th>Room</th><th>Tenant</th><th class="right">Rent</th><th class="right">Paid</th><th>Status</th></tr></thead><tbody>'+
+    active.slice().sort((a,b)=>a.unit.localeCompare(b.unit)).map(r=>{const pd=rentPaidFor(r,cur);const owes=Math.max(0,(+r.rent||0)-pd);
+      return `<tr class="row" onclick="openTenant('${r.id}')"><td class="nowrap" data-label="Room">${escapeHtml(r.unit)}</td><td data-label="Tenant">${escapeHtml(r.tenant)}</td><td class="right nowrap" data-label="Rent">${fmtMoney(r.rent)}</td><td class="right nowrap" data-label="Paid">${fmtMoney(pd)}</td><td data-label="Status">${owes<=0?'<span class="badge paid">Paid</span>':'<span class="badge unpaid">Owes '+fmtMoney(owes)+'</span>'}</td></tr>`;
+    }).join('')+'</tbody></table></div>';
+}
+
+function openTenant(arg){
+  editingRent=[];
+  const sel=document.getElementById('t_unit');
+  sel.innerHTML=ROOMS.map(r=>`<option>${r}</option>`).join('');
+  const del=document.getElementById('tenantDeleteBtn');
+  const existing=arg&&rentals().find(r=>r.id===arg);
+  if(existing){
+    const r=existing;
+    document.getElementById('tenantTitle').textContent='Tenant — '+r.unit;
+    document.getElementById('t_id').value=r.id; sel.value=r.unit;
+    document.getElementById('t_tenant').value=r.tenant||'';
+    document.getElementById('t_phone').value=r.phone||'';
+    document.getElementById('t_rent').value=r.rent||'';
+    document.getElementById('t_start').value=r.startDate||'';
+    document.getElementById('t_guests').value=r.guests||'';
+    document.getElementById('t_idno').value=r.idNumber||'';
+    document.getElementById('t_notes').value=r.notes||'';
+    document.getElementById('t_status').value=r.status||'active';
+    editingRent=JSON.parse(JSON.stringify(r.payments||[]));
+    del.style.display='block';
+  }else{
+    document.getElementById('tenantTitle').textContent='Assign tenant';
+    ['t_id','t_tenant','t_phone','t_rent','t_start','t_guests','t_idno','t_notes'].forEach(i=>document.getElementById(i).value='');
+    if(arg)sel.value=arg;
+    document.getElementById('t_status').value='active';
+    del.style.display='none';
+  }
+  const ro=!isManager();
+  ['t_unit','t_status','t_tenant','t_phone','t_rent','t_start','t_guests','t_idno','t_notes'].forEach(i=>{const e=document.getElementById(i);if(e)e.disabled=ro;});
+  document.getElementById('rp_month').value=todayStr().slice(0,7);
+  renderRentPayments();
+  document.getElementById('tenantOverlay').classList.add('open');
+}
+function closeTenant(){document.getElementById('tenantOverlay').classList.remove('open');}
+document.getElementById('tenantOverlay').addEventListener('click',e=>{if(e.target.id==='tenantOverlay')closeTenant();});
+
+function renderRentPayments(){
+  const sum=editingRent.reduce((a,p)=>a+(+p.amount||0),0);
+  const list=document.getElementById('rentList');
+  list.innerHTML=editingRent.length?editingRent.map((p,i)=>`<div class="pay-item"><span>${monthName(p.month)||'—'} · ${fmtMoney(p.amount)} <span class="muted">${p.method?'· '+escapeHtml(p.method):''}</span></span><span class="nowrap mgr-only"><button class="iconbtn del" title="Remove" onclick="removeRent(${i})">🗑</button></span></div>`).join(''):'<div class="hint">No rent payments recorded yet.</div>';
+  document.getElementById('rentMeta').innerHTML=`Total recorded: <b style="color:var(--green)">${fmtMoney(sum)}</b>`;
+}
+function addRent(){
+  if(!isManager())return;
+  const amt=+document.getElementById('rp_amount').value;
+  const month=document.getElementById('rp_month').value||todayStr().slice(0,7);
+  if(!amt||amt<=0){alert('Enter a rent amount.');return}
+  editingRent.push({month,amount:amt,date:todayStr(),method:document.getElementById('rp_method').value.trim()});
+  document.getElementById('rp_amount').value='';document.getElementById('rp_method').value='';
+  renderRentPayments();
+}
+function removeRent(i){if(!isManager())return;if(confirm('Remove this rent payment?')){editingRent.splice(i,1);renderRentPayments();}}
+document.getElementById('t_rent').addEventListener('input',renderRentPayments);
+
+function saveTenant(){
+  if(!isManager()){toast('View-only access 👁️','Use the manager passcode to manage tenants.','warn');return;}
+  const tenant=document.getElementById('t_tenant').value.trim();
+  const unit=document.getElementById('t_unit').value;
+  const rent=+document.getElementById('t_rent').value||0;
+  if(!tenant){alert('Please enter the tenant name.');return}
+  if(!rent){alert('Please enter the monthly rent.');return}
+  const id=document.getElementById('t_id').value;
+  const status=document.getElementById('t_status').value;
+  if(status==='active'){
+    const clash=rentals().find(r=>r.id!==id&&r.status!=='ended'&&r.unit===unit);
+    if(clash&&!confirm(unit+' already has an active tenant ('+clash.tenant+'). Save anyway?'))return;
+  }
+  const rec={id:id||uid(),kind:'motel',unit,tenant,phone:document.getElementById('t_phone').value.trim(),rent,startDate:document.getElementById('t_start').value,guests:document.getElementById('t_guests').value,idNumber:document.getElementById('t_idno').value.trim(),notes:document.getElementById('t_notes').value.trim(),status,payments:editingRent};
+  if(id){DB[DB.findIndex(x=>x.id===id)]=rec}else{DB.push(rec)}
+  save();closeTenant();renderMotel();cloudUpsert(rec);
+  toast('Tenant saved 🏠',unit+' · '+tenant,'success');
+}
+function deleteTenant(){
+  if(!isManager())return;
+  const id=document.getElementById('t_id').value;const r=DB.find(x=>x.id===id);if(!r)return;
+  if(confirm('Remove tenant '+r.tenant+' from '+r.unit+'? This deletes their record.')){
+    DB=DB.filter(x=>x.id!==id);save();closeTenant();renderMotel();cloudDelete(id);
   }
 }
 
