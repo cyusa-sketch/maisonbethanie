@@ -420,6 +420,38 @@
   body.role-monitor .mgr-only{display:none!important}
   .role-badge{display:none;align-items:center;gap:5px;background:#d8bd7e;color:#2c2410;font-size:11px;font-weight:800;padding:6px 11px;border-radius:20px;align-self:center;white-space:nowrap}
 
+  /* ===== booking receipt ===== */
+  .receipt-paper{font-family:Georgia,'Times New Roman',serif;color:#23211c;background:#fff;padding:8px 6px;border-radius:8px}
+  .r-head{display:flex;align-items:center;gap:14px;border-bottom:2px solid #2c3a2c;padding-bottom:14px;margin-bottom:16px}
+  .r-logo svg{width:56px;height:42px;display:block}
+  .r-brand{font-size:25px;font-weight:700;color:#2c3a2c;letter-spacing:.5px;line-height:1.1}
+  .r-sub{font-size:11.5px;color:#6b6258;letter-spacing:1px;margin-top:2px}
+  .r-title{font-size:14px;letter-spacing:3px;text-transform:uppercase;color:#a98c4a;font-weight:700;margin-bottom:8px}
+  .r-meta{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:12px;color:#444;border-bottom:1px solid #e2dcc4;padding-bottom:10px;margin-bottom:14px}
+  .r-cols{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:16px}
+  .r-h{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:#a98c4a;font-weight:700;margin-bottom:4px}
+  .r-big{font-size:18px;font-weight:700;color:#2c3a2c}
+  .r-cols>div>div{font-size:13px;line-height:1.55}
+  .r-pay{width:100%;border-collapse:collapse;margin-bottom:14px;font-size:13px}
+  .r-pay th{text-align:left;border-bottom:1.5px solid #2c3a2c;padding:7px 4px;font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:#6b6258}
+  .r-pay td{padding:7px 4px;border-bottom:1px solid #eee}
+  .r-amt{text-align:right;white-space:nowrap}
+  .r-pay tfoot td{font-weight:700;border-top:2px solid #2c3a2c;border-bottom:none;color:#2c3a2c;font-size:14px}
+  .r-notes{font-size:12px;margin-bottom:14px;color:#444}
+  .r-terms{font-size:11px;color:#777;line-height:1.55;border-top:1px dashed #ddd;padding-top:10px;margin-bottom:26px}
+  .r-sign{display:flex;justify-content:space-between;gap:24px;font-size:12px;color:#444;margin-bottom:18px;text-align:center}
+  .r-sign>div{flex:1}
+  .r-sign span{display:block;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:#888;margin-top:4px}
+  .r-foot{text-align:center;font-size:11px;color:#a98c4a;border-top:1px solid #e2dcc4;padding-top:12px}
+  @media(max-width:600px){.r-cols{grid-template-columns:1fr}}
+  @media print{
+    body.receipt-open *{visibility:hidden}
+    body.receipt-open #receiptOverlay,body.receipt-open #receiptOverlay *{visibility:visible}
+    body.receipt-open #receiptOverlay{position:absolute;inset:0;display:block;background:#fff;padding:0;overflow:visible}
+    body.receipt-open #receiptOverlay .modal{box-shadow:none;border-radius:0;max-width:none;width:100%;background:#fff}
+    body.receipt-open #receiptOverlay .modal-head,body.receipt-open #receiptOverlay .modal-foot{display:none}
+  }
+
   /* ===== money insights ===== */
   .ins-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
   .ins-stat{background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:14px 15px}
@@ -734,9 +766,25 @@
     </div>
     <div class="modal-foot">
       <button class="btn danger mgr-only" id="deleteBtn" onclick="deleteBooking()">Delete</button>
+      <button class="btn ghost" id="receiptBtn" style="display:none" onclick="openReceiptFromForm()">🧾 Receipt</button>
       <div style="display:flex;gap:10px;margin-left:auto">
         <button class="btn ghost" onclick="closeForm()">Close</button>
         <button class="btn mgr-only" onclick="saveBooking()">Save booking</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RECEIPT OVERLAY -->
+<div class="overlay" id="receiptOverlay">
+  <div class="modal" style="max-width:600px">
+    <div class="modal-head"><h2>Booking receipt</h2><button class="x" onclick="closeReceipt()">×</button></div>
+    <div class="modal-body"><div id="receiptPaper" class="receipt-paper"></div></div>
+    <div class="modal-foot">
+      <button class="btn ghost" onclick="closeReceipt()">Close</button>
+      <div style="display:flex;gap:10px;margin-left:auto">
+        <button class="btn ghost" id="shareReceiptBtn" onclick="shareReceipt()">📤 Share</button>
+        <button class="btn" onclick="printReceipt()">🖨️ Print / Save PDF</button>
       </div>
     </div>
   </div>
@@ -1087,6 +1135,7 @@ function openForm(id){
     document.getElementById('f_end').value=isMulti(w)?endOf(w):'';
     editingPayments=JSON.parse(JSON.stringify(w.payments||[]));
     del.style.display='block';
+    document.getElementById('receiptBtn').style.display='inline-block';
   }else{
     document.getElementById('modalTitle').textContent='New Booking';
     ['f_id','f_couple','f_phone','f_date','f_notes','f_end'].forEach(i=>document.getElementById(i).value='');
@@ -1096,6 +1145,7 @@ function openForm(id){
     document.getElementById('f_status').value='confirmed';
     document.getElementById('f_multi').checked=false;
     del.style.display='none';
+    document.getElementById('receiptBtn').style.display='none';
   }
   toggleMulti();syncEndMin();
   // monitors get a read-only view
@@ -1375,6 +1425,50 @@ function celebrate(){
     setTimeout(()=>c.remove(),2200);
   }
 }
+
+/* ================= BOOKING RECEIPT ================= */
+let currentReceiptId=null;
+const RECEIPT_TENT='<svg viewBox="0 0 100 70"><path d="M8 46 C16 26 30 16 50 13 C70 16 84 26 92 46 q-4.2 8 -8.4 0 q-4.2 8 -8.4 0 q-4.2 8 -8.4 0 q-4.2 8 -8.4 0 q-4.2 8 -8.4 0 q-4.2 8 -8.4 0 q-4.2 8 -8.4 0 q-4.2 8 -8.4 0 q-4.2 8 -8.4 0 q-4.2 8 -8.4 0 Z" fill="#2c3a2c"/><path d="M50 5 L59 7.5 L50 10 Z" fill="#2c3a2c"/><g stroke="#2c3a2c" stroke-width="2.6" stroke-linecap="round" fill="none"><path d="M50 13 L50 5"/><path d="M13 50 L13 66"/><path d="M50 50 L50 66"/><path d="M87 50 L87 66"/><path d="M8 66 L92 66"/></g></svg>';
+function openReceiptFromForm(){const id=document.getElementById('f_id').value;if(id)openReceipt(id);}
+function openReceipt(id){
+  const w=DB.find(x=>x.id===id);if(!w)return;
+  currentReceiptId=id;
+  const no='MB-'+id.slice(-6).toUpperCase();
+  const issued=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'});
+  const pays=w.payments||[];
+  const rows=pays.length?pays.slice().sort((a,b)=>(a.date||'').localeCompare(b.date||'')).map(p=>`<tr><td>${fmtDate(p.date)}</td><td>${escapeHtml(p.method||'—')}</td><td class="r-amt">${fmtMoney(p.amount)}</td></tr>`).join(''):'<tr><td colspan="3" style="text-align:center;color:#999;padding:14px">No payments recorded yet</td></tr>';
+  document.getElementById('receiptPaper').innerHTML=
+    `<div class="r-head"><span class="r-logo">${RECEIPT_TENT}</span><div><div class="r-brand">Maison Béthanie</div><div class="r-sub">WEDDINGS &amp; EVENTS · KIGALI, RWANDA</div></div></div>`+
+    `<div class="r-title">Booking Receipt</div>`+
+    `<div class="r-meta"><span><b>Receipt No.</b>&nbsp; ${no}</span><span><b>Issued</b>&nbsp; ${issued}</span></div>`+
+    `<div class="r-cols"><div><div class="r-h">Client</div><div class="r-big">${escapeHtml(w.couple)}</div>${w.phone?`<div>${escapeHtml(w.phone)}</div>`:''}</div>`+
+    `<div><div class="r-h">Event details</div><div>${escapeHtml(w.eventType||'Event')}</div><div><b>${dateLabel(w)}</b></div>${w.hall?`<div>Hall: ${escapeHtml(w.hall)}</div>`:''}${w.package?`<div>${escapeHtml(w.package)}</div>`:''}</div></div>`+
+    `<table class="r-pay"><thead><tr><th>Date</th><th>Method</th><th class="r-amt">Amount</th></tr></thead><tbody>${rows}</tbody><tfoot><tr><td colspan="2">Total received</td><td class="r-amt">${fmtMoney(paid(w))}</td></tr></tfoot></table>`+
+    (w.notes?`<div class="r-notes"><div class="r-h">Notes</div>${escapeHtml(w.notes)}</div>`:'')+
+    `<div class="r-terms">This receipt confirms the booking and payment(s) listed above for the stated event date(s) at Maison Béthanie. The date is reserved for the client upon payment and is subject to the venue's standard terms. Payments received are non-transferable to third parties without consent.</div>`+
+    `<div class="r-sign"><div>______________________<span>Client signature</span></div><div>______________________<span>For Maison Béthanie</span></div></div>`+
+    `<div class="r-foot">Thank you for choosing Maison Béthanie · Kigali, Rwanda</div>`;
+  document.getElementById('receiptOverlay').classList.add('open');
+  document.body.classList.add('receipt-open');
+}
+function closeReceipt(){document.getElementById('receiptOverlay').classList.remove('open');document.body.classList.remove('receipt-open');}
+function printReceipt(){window.print();notifyBoss('printed');}
+function shareReceipt(){
+  const w=DB.find(x=>x.id===currentReceiptId);if(!w)return;
+  const text=`Maison Béthanie — Booking Receipt\nClient: ${w.couple}\nEvent: ${w.eventType||'Event'} · ${dateLabel(w)}\nHall: ${w.hall||'—'}\nReceived: ${fmtMoney(paid(w))}\n— Maison Béthanie, Kigali`;
+  if(navigator.share){navigator.share({title:'Maison Béthanie — Receipt',text}).then(()=>notifyBoss('shared')).catch(()=>{});}
+  else{try{navigator.clipboard.writeText(text);}catch(e){}toast('Receipt summary copied','Paste it to send to your client.','success');notifyBoss('shared');}
+}
+let _lastBoss=0;
+async function notifyBoss(){
+  const w=DB.find(x=>x.id===currentReceiptId);if(!w||!sb)return;
+  if(Date.now()-_lastBoss<5000)return; _lastBoss=Date.now();
+  try{
+    const {error}=await sb.from('events_log').insert({kind:'receipt',message:`🧾 Receipt issued · ${w.couple} · ${fmtMoney(paid(w))}`});
+    if(!error)toast('Boss notified 🔔','A receipt alert was sent to the manager.','success');
+  }catch(e){}
+}
+document.getElementById('receiptOverlay').addEventListener('click',e=>{if(e.target.id==='receiptOverlay')closeReceipt();});
 
 /* ---------- passcode lock ---------- */
 const PASS_MANAGER='2e064c30dfe840ff76432c401a0d0c19f0b30d823f60fd378353a6a63e431e75';
