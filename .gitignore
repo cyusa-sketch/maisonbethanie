@@ -2,3 +2,5 @@
 *.json
 !manifest.webmanifest
 maison-bethanie-backup-*.json
+
+.vercel
