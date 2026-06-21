@@ -27,6 +27,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <style>
   :root{
     --bg:#FFF9EB; --card:#FFFDF6; --ink:#23291f; --muted:#7d8276;
@@ -838,8 +839,9 @@
     <div class="modal-foot">
       <button class="btn ghost" onclick="closeReceipt()">Close</button>
       <div style="display:flex;gap:10px;margin-left:auto">
-        <button class="btn ghost" id="shareReceiptBtn" onclick="shareReceipt()">📤 Share</button>
-        <button class="btn" onclick="printReceipt()">🖨️ Print / Save PDF</button>
+        <button class="btn ghost" onclick="printReceipt()">🖨️ Print</button>
+        <button class="btn ghost" onclick="shareReceiptImg()">📤 Share</button>
+        <button class="btn" onclick="saveReceiptImg()">📥 Save image</button>
       </div>
     </div>
   </div>
@@ -1736,14 +1738,43 @@ function openRentReceipt(id){
   document.body.classList.add('receipt-open');
 }
 function closeReceipt(){document.getElementById('receiptOverlay').classList.remove('open');document.body.classList.remove('receipt-open');}
-function printReceipt(){window.print();notifyBoss('printed');}
-function shareReceipt(){
+function printReceipt(){window.print();notifyBoss();}
+function _receiptName(){const w=DB.find(x=>x.id===currentReceiptId);const who=w?(w.kind==='motel'?w.tenant:w.couple):'receipt';return 'Maison-Bethanie-Receipt-'+String(who||'').replace(/[^a-z0-9]+/gi,'-').replace(/^-|-$/g,'')+'.png';}
+async function receiptCanvas(){
+  const el=document.getElementById('receiptPaper').querySelector('.rcp')||document.getElementById('receiptPaper');
+  return await html2canvas(el,{scale:2,backgroundColor:'#ffffff',useCORS:true,logging:false});
+}
+async function saveReceiptImg(){
+  if(typeof html2canvas==='undefined'){window.print();notifyBoss();return;}
+  try{
+    const c=await receiptCanvas();
+    const a=document.createElement('a');a.href=c.toDataURL('image/png');a.download=_receiptName();
+    document.body.appendChild(a);a.click();a.remove();
+    toast('Receipt saved 📥','Image downloaded to your device.','success');notifyBoss();
+  }catch(e){window.print();}
+}
+async function shareReceiptImg(){
+  if(typeof html2canvas==='undefined'){return shareReceiptText();}
+  let c;try{c=await receiptCanvas();}catch(e){return shareReceiptText();}
+  c.toBlob(async(blob)=>{
+    if(!blob)return shareReceiptText();
+    const file=new File([blob],_receiptName(),{type:'image/png'});
+    if(navigator.canShare&&navigator.canShare({files:[file]})){
+      try{await navigator.share({files:[file],title:'Maison Béthanie — Receipt'});notifyBoss();}catch(e){}
+    }else{
+      const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=_receiptName();
+      document.body.appendChild(a);a.click();a.remove();
+      toast('Saved as image 📥','Sharing isn\'t available here — attach this image in WhatsApp.','info');notifyBoss();
+    }
+  },'image/png');
+}
+function shareReceiptText(){
   const w=DB.find(x=>x.id===currentReceiptId);if(!w)return;
   const text=w.kind==='motel'
     ?`Maison Béthanie — Rent Receipt\nTenant: ${w.tenant}\nRoom: ${w.unit} · ${fmtMoney(w.rent)}/mo\nTotal paid: ${fmtMoney(rentTotal(w))}\n— Maison Béthanie, Kigali`
     :`Maison Béthanie — Booking Receipt\nClient: ${w.couple}\nEvent: ${w.eventType||'Event'} · ${dateLabel(w)}\nHall: ${w.hall||'—'}\nReceived: ${fmtMoney(paid(w))}\n— Maison Béthanie, Kigali`;
-  if(navigator.share){navigator.share({title:'Maison Béthanie — Receipt',text}).then(()=>notifyBoss('shared')).catch(()=>{});}
-  else{try{navigator.clipboard.writeText(text);}catch(e){}toast('Receipt summary copied','Paste it to send.','success');notifyBoss('shared');}
+  if(navigator.share){navigator.share({title:'Maison Béthanie — Receipt',text}).then(()=>notifyBoss()).catch(()=>{});}
+  else{try{navigator.clipboard.writeText(text);}catch(e){}toast('Receipt summary copied','Paste it to send.','success');notifyBoss();}
 }
 let _lastBoss=0;
 async function pushBoss(message,kind){
