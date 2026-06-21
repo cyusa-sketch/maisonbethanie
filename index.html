@@ -421,37 +421,39 @@
   body.role-monitor .mgr-only{display:none!important}
   .role-badge{display:none;align-items:center;gap:5px;background:#d8bd7e;color:#2c2410;font-size:11px;font-weight:800;padding:6px 11px;border-radius:20px;align-self:center;white-space:nowrap}
 
-  /* ===== booking receipt (modern card) ===== */
-  .receipt-paper{font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#23211c;background:transparent;padding:0}
-  .rc{background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 6px 24px rgba(30,38,28,.1)}
-  .rc-band{background:#2c3a2c;color:#f2ead2;display:flex;align-items:center;gap:11px;padding:18px 24px}
-  .rc-band .rc-logo svg{width:30px;height:24px;display:block}
-  .rc-band-title{font-size:17px;font-weight:600;letter-spacing:.3px}
-  .rc-band-title b{font-weight:700}
-  .rc-body{padding:26px 24px 22px}
-  .rc-greet-row{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
-  .rc-greet{font-size:25px;font-weight:800;line-height:1.15;color:#2c3a2c}
-  .rc-date{text-align:right;font-size:11.5px;color:#8a8a82;white-space:nowrap;line-height:1.6}
-  .rc-date b{color:#a98c4a;font-weight:700}
-  .rc-subtext{font-size:13px;color:#7a7a72;margin-top:10px;line-height:1.55}
-  .rc-total-row{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-top:24px;padding-top:18px;border-top:2px solid #efe9da}
-  .rc-total-label{font-size:21px;font-weight:800;color:#2c3a2c}
-  .rc-total-amt{font-size:25px;font-weight:800;color:#3f6b4f;white-space:nowrap}
-  .rc-rows{margin-top:12px}
-  .rc-row{display:flex;justify-content:space-between;gap:12px;font-size:13px;color:#666;padding:9px 0;border-bottom:1px solid #f1f1f1}
-  .rc-row:last-child{border-bottom:none}
-  .rc-row b{color:#23211c;font-weight:700;white-space:nowrap}
-  .rc-details{background:#f7f3ea;border-radius:20px;margin-top:14px;padding:22px 24px}
-  .rc-d-title{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#a98c4a;font-weight:800;margin-bottom:14px}
-  .rc-d-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px 18px;font-size:14px;font-weight:600;color:#2c3a2c}
-  .rc-d-grid span{display:block;font-size:9.5px;text-transform:uppercase;letter-spacing:.5px;color:#9a958a;font-weight:700;margin-bottom:3px}
-  .rc-foot{display:flex;justify-content:space-between;align-items:flex-end;gap:18px;margin-top:22px;padding-top:18px;border-top:1px solid #e6ddc9}
-  .rc-qr{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}
-  .rc-qr svg,.rc-qr img{width:88px;height:88px;display:block}
-  .rc-qr span{font-size:9.5px;color:#8a8a82;max-width:100px;line-height:1.3}
-  .rc-sign{font-size:12px;color:#555;text-align:center;flex:0 0 auto}
-  .rc-sign span{display:block;font-size:9.5px;text-transform:uppercase;letter-spacing:.5px;color:#9a958a;margin-top:4px}
-  @media(max-width:600px){.rc-greet{font-size:21px}}
+  /* ===== booking receipt (elegant) ===== */
+  .receipt-paper{font-family:'Cormorant Garamond',Georgia,serif;color:#2a2620;background:transparent;padding:0}
+  .rcp{background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 6px 24px rgba(30,38,28,.14)}
+  .rcp-head{background:#2c3a2c;text-align:center;padding:26px 20px 28px}
+  .rcp-crest svg{width:68px;height:52px;display:inline-block}
+  .rcp-brand{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:29px;color:#f0e4c4;letter-spacing:.5px;margin-top:4px}
+  .rcp-tag{font-family:'Segoe UI',sans-serif;font-size:9.5px;letter-spacing:5px;color:#cdb06a;margin-top:5px}
+  .rcp-title{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:44px;color:#f0e4c4;margin-top:14px;line-height:1}
+  .rcp-body{padding:26px 26px 24px}
+  .rcp-greet-row{display:flex;justify-content:space-between;gap:14px;align-items:flex-start}
+  .rcp-greet{font-family:'Cormorant Garamond',serif;font-weight:700;font-size:26px;line-height:1.15;color:#2a2620}
+  .rcp-date{font-family:'Segoe UI',sans-serif;font-size:11.5px;color:#8a8a82;white-space:nowrap;text-align:right;line-height:1.7}
+  .rcp-date b{color:#a98c4a}
+  .rcp-sub{font-family:'Segoe UI',sans-serif;font-size:13px;color:#7a7a72;margin-top:8px}
+  .rcp-total{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-top:24px;padding-bottom:8px;border-bottom:1px solid #e7e2d6}
+  .rcp-total-l,.rcp-total-a{font-family:'Cormorant Garamond',serif;font-weight:700;font-size:33px;color:#bfa05a;line-height:1}
+  .rcp-line{display:flex;justify-content:space-between;gap:12px;font-family:'Segoe UI',sans-serif;font-size:13px;color:#5a5a52;padding:11px 0;border-bottom:1px solid #efeae0}
+  .rcp-line:last-of-type{border-bottom:none}
+  .rcp-line b{color:#23211c;font-weight:700;white-space:nowrap}
+  .rcp-dh{font-family:'Segoe UI',sans-serif;font-weight:700;font-size:14px;color:#2a2620;margin:20px 0 12px}
+  .tlrow{position:relative;padding:0 0 16px 22px;border-left:2px solid #e3d9bf;margin-left:5px}
+  .tlrow:last-child{border-left-color:transparent;padding-bottom:0}
+  .tlrow::before{content:'';position:absolute;left:-6px;top:1px;width:9px;height:9px;background:#cdb06a;border-radius:2px}
+  .tltime{font-family:'Segoe UI',sans-serif;font-size:11px;font-weight:700;color:#bfa05a;letter-spacing:.3px}
+  .tlact{font-family:'Cormorant Garamond',serif;font-size:17px;color:#2a2620;line-height:1.25}
+  .rcp-foot{display:flex;justify-content:space-between;align-items:center;gap:14px;margin-top:20px;padding-top:18px;border-top:1px solid #e7e2d6}
+  .rcp-contact{display:flex;align-items:center;gap:11px}
+  .rcp-ava{width:46px;height:46px;border-radius:50%;background:#2c3a2c;display:grid;place-items:center;flex:0 0 auto}
+  .rcp-ava svg{width:26px;height:20px}
+  .rcp-contact .cl{font-family:'Segoe UI',sans-serif;font-size:9.5px;text-transform:uppercase;letter-spacing:.5px;color:#9a958a}
+  .rcp-contact .cv{font-family:'Cormorant Garamond',serif;font-size:17px;color:#2a2620;font-weight:600}
+  .rcp-btn{font-family:'Segoe UI',sans-serif;font-size:12px;font-weight:700;color:#2c3a2c;border:1px solid #cdb06a;border-radius:30px;padding:9px 15px;text-decoration:none;white-space:nowrap}
+  @media(max-width:600px){.rcp-greet{font-size:22px}.rcp-title{font-size:38px}}
   @media print{
     body.receipt-open *{visibility:hidden}
     body.receipt-open #receiptOverlay,body.receipt-open #receiptOverlay *{visibility:visible}
@@ -852,7 +854,7 @@
         </div>
         <div class="field block"><label>Tenant name *</label><input id="t_tenant" placeholder="e.g. John Doe"></div>
         <div class="field block"><label>Phone</label><input id="t_phone" placeholder="07X XXX XXXX"></div>
-        <div class="field block"><label>Monthly rent (RWF) *</label><input type="number" min="0" id="t_rent" placeholder="e.g. 150000"></div>
+        <div class="field block"><label>Monthly rent (RWF) *</label><input type="number" min="0" id="t_rent" placeholder="160000"></div>
         <div class="field block"><label>Move-in date</label><input type="date" id="t_start"></div>
         <div class="field block"><label>Number of occupants</label><input type="number" min="0" id="t_guests" placeholder="e.g. 2"></div>
         <div class="field block"><label>ID / Passport No.</label><input id="t_idno" placeholder="National ID or passport"></div>
@@ -1586,6 +1588,7 @@ function openTenant(arg){
   }else{
     document.getElementById('tenantTitle').textContent='Assign tenant';
     ['t_id','t_tenant','t_phone','t_rent','t_start','t_guests','t_idno','t_notes'].forEach(i=>document.getElementById(i).value='');
+    document.getElementById('t_rent').value='160000';
     if(arg)sel.value=arg;
     document.getElementById('t_status').value='active';
     del.style.display='none';
@@ -1646,45 +1649,38 @@ function deleteTenant(){
 /* ================= BOOKING RECEIPT ================= */
 let currentReceiptId=null;
 const RECEIPT_TENT='<svg viewBox="0 0 100 70"><path d="M8 46 C16 26 30 16 50 13 C70 16 84 26 92 46 q-4.2 8 -8.4 0 q-4.2 8 -8.4 0 q-4.2 8 -8.4 0 q-4.2 8 -8.4 0 q-4.2 8 -8.4 0 q-4.2 8 -8.4 0 q-4.2 8 -8.4 0 q-4.2 8 -8.4 0 q-4.2 8 -8.4 0 q-4.2 8 -8.4 0 Z" fill="#d8bd7e"/><path d="M50 5 L59 7.5 L50 10 Z" fill="#d8bd7e"/><g stroke="#d8bd7e" stroke-width="2.6" stroke-linecap="round" fill="none"><path d="M50 13 L50 5"/><path d="M13 50 L13 66"/><path d="M50 50 L50 66"/><path d="M87 50 L87 66"/><path d="M8 66 L92 66"/></g></svg>';
+const TENT_CREAM='<svg viewBox="0 0 100 70"><path d="M8 46 C16 26 30 16 50 13 C70 16 84 26 92 46 q-4.2 8 -8.4 0 q-4.2 8 -8.4 0 q-4.2 8 -8.4 0 q-4.2 8 -8.4 0 q-4.2 8 -8.4 0 q-4.2 8 -8.4 0 q-4.2 8 -8.4 0 q-4.2 8 -8.4 0 q-4.2 8 -8.4 0 q-4.2 8 -8.4 0 Z" fill="#f0e4c4"/><path d="M50 5 L59 7.5 L50 10 Z" fill="#f0e4c4"/><g stroke="#f0e4c4" stroke-width="2.6" stroke-linecap="round" fill="none"><path d="M50 13 L50 5"/><path d="M13 50 L13 66"/><path d="M50 50 L50 66"/><path d="M87 50 L87 66"/><path d="M8 66 L92 66"/></g></svg>';
 const VENUE_MAP='https://maps.app.goo.gl/xWdoEecsN1iVfHC37';
-function qrSvg(text){
-  if(typeof qrcode==='undefined')return '';
-  try{const q=qrcode(0,'M');q.addData(text);q.make();return q.createSvgTag({cellSize:3,margin:0,scalable:true});}catch(e){return '';}
-}
 function openReceiptFromForm(){const id=document.getElementById('f_id').value;if(id)openReceipt(id);}
 function openReceipt(id){
   const w=DB.find(x=>x.id===id);if(!w)return;
   currentReceiptId=id;
   const no='MB-'+id.slice(-6).toUpperCase();
-  const issued=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+  const d=new Date();
+  const issued=`${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;
   const pays=(w.payments||[]).slice().sort((a,b)=>(a.date||'').localeCompare(b.date||''));
-  const rows=pays.length?pays.map(p=>`<div class="rc-row"><span>${fmtDate(p.date)} · ${escapeHtml(p.method||'cash')}</span><b>${fmtMoney(p.amount)}</b></div>`).join(''):'<div class="rc-row" style="color:#999">No payments recorded yet<b></b></div>';
   const _cap=s=>String(s||'').replace(/\b\w/g,c=>c.toUpperCase());
   const firstName=_cap((w.couple||'').split(/\s*[&,]\s*|\s+and\s+/i)[0]||w.couple);
-  const qr=qrSvg(VENUE_MAP);
+  const ev=(w.eventType||'event').toLowerCase();
+  const past=endOf(w)<todayStr();
+  const sub=past?`We hope you enjoyed your ${escapeHtml(ev)} with us.`:`Thank you for choosing Maison Béthanie for your ${escapeHtml(ev)}.`;
+  const lines=pays.length?pays.map(p=>`<div class="rcp-line"><span>${fmtDate(p.date)} · ${escapeHtml(p.method||'cash')}</span><b>${fmtMoney(p.amount)}</b></div>`).join(''):'<div class="rcp-line"><span>No payments recorded yet</span><b></b></div>';
+  const tl=`<div class="tlrow"><div class="tltime">${dateLabel(w)}</div><div class="tlact">${escapeHtml(w.eventType||'Event')}${w.hall?' · '+escapeHtml(w.hall):''}</div></div>`+
+    pays.map(p=>`<div class="tlrow"><div class="tltime">${fmtDate(p.date)}</div><div class="tlact">${fmtMoney(p.amount)} <span style="font-family:'Segoe UI',sans-serif;font-size:12px;color:#8a8a82">· ${escapeHtml(p.method||'payment')}</span></div></div>`).join('');
   document.getElementById('receiptPaper').innerHTML=
-    '<div class="rc">'+
-      `<div class="rc-band"><span class="rc-logo">${RECEIPT_TENT}</span><span class="rc-band-title"><b>Maison Béthanie</b> · Receipt</span></div>`+
-      '<div class="rc-body">'+
-        `<div class="rc-greet-row"><div class="rc-greet">${escapeHtml(firstName)}, thank you 💐</div><div class="rc-date">${issued}<br><b>${no}</b></div></div>`+
-        `<div class="rc-subtext">We're delighted to host your ${escapeHtml((w.eventType||'event').toLowerCase())} at Maison Béthanie.</div>`+
-        `<div class="rc-total-row"><div class="rc-total-label">Total received</div><div class="rc-total-amt">${fmtMoney(paid(w))}</div></div>`+
-        `<div class="rc-rows">${rows}</div>`+
-      '</div>'+
-    '</div>'+
-    '<div class="rc-details">'+
-      '<div class="rc-d-title">Booking details</div>'+
-      '<div class="rc-d-grid">'+
-        `<div><span>Client</span>${escapeHtml(w.couple)}</div>`+
-        `<div><span>Date</span>${dateLabel(w)}</div>`+
-        `<div><span>Event</span>${escapeHtml(w.eventType||'Event')}</div>`+
-        `<div><span>Hall</span>${escapeHtml(w.hall||'—')}</div>`+
-        `<div><span>Package</span>${escapeHtml(w.package||'—')}</div>`+
-        `<div><span>Phone</span>${escapeHtml(w.phone||'—')}</div>`+
-      '</div>'+
-      '<div class="rc-foot">'+
-        (qr?`<div class="rc-qr">${qr}<span>📍 Scan for directions to the venue</span></div>`:'<div></div>')+
-        '<div class="rc-sign">______________<span>For Maison Béthanie</span></div>'+
+    '<div class="rcp">'+
+      `<div class="rcp-head"><div class="rcp-crest">${RECEIPT_TENT}</div><div class="rcp-brand">Maison Béthanie</div><div class="rcp-tag">WEDDINGS · KIGALI</div><div class="rcp-title">Receipt</div></div>`+
+      '<div class="rcp-body">'+
+        `<div class="rcp-greet-row"><div class="rcp-greet">${escapeHtml(firstName)}, thank you for<br>choosing Maison Béthanie</div><div class="rcp-date">${issued}<br><b>${no}</b></div></div>`+
+        `<div class="rcp-sub">${sub}</div>`+
+        `<div class="rcp-total"><span class="rcp-total-l">Total</span><span class="rcp-total-a">${fmtMoney(paid(w))}</span></div>`+
+        lines+
+        '<div class="rcp-dh">Details</div>'+
+        `<div class="rcp-timeline">${tl}</div>`+
+        '<div class="rcp-foot">'+
+          `<div class="rcp-contact"><div class="rcp-ava">${TENT_CREAM}</div><div><div class="cl">Venue</div><div class="cv">Maison Béthanie · Kigali</div></div></div>`+
+          `<a class="rcp-btn" href="${VENUE_MAP}" target="_blank" rel="noopener">Directions →</a>`+
+        '</div>'+
       '</div>'+
     '</div>';
   document.getElementById('receiptOverlay').classList.add('open');
