@@ -1503,14 +1503,6 @@ function notifyTodaysEvents(){
   todays.forEach(w=>{toast('Happening today 💍',w.couple+(w.hall?' · '+w.hall:''),'success');systemNotify('Event today',w.couple+(w.hall?' · '+w.hall:''));});
 }
 
-/* ---------- seed sample data on first run ---------- */
-if(DB.length===0&&!localStorage.getItem(KEY)){
-  const yr=new Date().getFullYear();
-  DB=[
-    {id:uid(),couple:'Eric & Diane',phone:'0788 123 456',date:`${yr}-${String(new Date().getMonth()+2).padStart(2,'0')}-14`,endDate:`${yr}-${String(new Date().getMonth()+2).padStart(2,'0')}-14`,hall:'Main Hall',package:'Design & Hall Access',status:'confirmed',notes:'White & gold theme.',payments:[{amount:1500000,date:todayStr(),method:'MoMo'}]},
-  ];
-  save();
-}
 
 /* ---------- decorative: floating petals ---------- */
 function initPetals(){
