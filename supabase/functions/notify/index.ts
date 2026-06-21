@@ -75,6 +75,18 @@ Deno.serve(async (req) => {
     sent += await sendToAll({ title: "Event today 💍", body: `${w.couple}${w.hall ? " · " + w.hall : ""}`, tag: "today-" + w.id, url: "./" });
 
   const curKey = today.slice(0, 7);
+
+  // overdue rent — nudge on days 1, 5, 10, 15, 20, 25 of the month
+  const dom = new Date().getDate();
+  if (dom === 1 || dom % 5 === 0) {
+    const tenants = (weds ?? []).map((r) => r.payload).filter((w) => w.kind === "motel" && w.status !== "ended");
+    for (const r of tenants) {
+      const paidM = (r.payments ?? []).filter((p) => (p.month || "") === curKey).reduce((x, p) => x + (+p.amount || 0), 0);
+      const owes = Math.max(0, (+r.rent || 0) - paidM);
+      if (owes > 0) sent += await sendToAll({ title: "💸 Rent due", body: `${r.tenant} · ${r.unit} owes ${fmt(owes)} this month`, tag: "rentdue-" + r.id, url: "./" });
+    }
+  }
+
   const income = active.reduce((a, w) => a + (w.payments ?? []).filter((p) => (p.date || "").slice(0, 7) === curKey).reduce((x, p) => x + (+p.amount || 0), 0), 0);
   const upcoming = active.filter((w) => endOf(w) >= today && w.status !== "done").length;
   if (body.summary !== false)
