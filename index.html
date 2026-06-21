@@ -1445,9 +1445,9 @@ function buildNotifications(){
     if(owes>0)list.push({alert:true,ico:'💸',title:'Rent due: '+(r.tenant||r.unit),body:r.unit+' owes '+fmtMoney(owes)+' for '+monthName(curKey),id:r.id,motel:true});
   });
   const monthIncome=active.reduce((a,w)=>a+(w.payments||[]).filter(p=>(p.date||'').slice(0,7)===curKey).reduce((x,p)=>x+(+p.amount||0),0),0);
-  list.push({alert:false,ico:'💰',title:now.toLocaleDateString('en-GB',{month:'long'})+' income: '+fmtMoney(monthIncome),body:'Weddings received so far this month'});
+  list.push({alert:false,ico:'💰',title:now.toLocaleDateString('en-GB',{month:'long'})+' income: '+fmtMoney(monthIncome),body:'Tap to see money insights',view:'dashboard'});
   const upc=active.filter(w=>endOf(w)>=today&&w.status!=='done').length;
-  list.push({alert:false,ico:'📅',title:upc+' upcoming event'+(upc===1?'':'s'),body:'Tap Bookings to see all'});
+  list.push({alert:false,ico:'📅',title:upc+' upcoming event'+(upc===1?'':'s'),body:'Tap Bookings to see all',view:'bookings'});
   return list;
 }
 function renderNotifs(){
@@ -1456,7 +1456,10 @@ function renderNotifs(){
   if(badge){if(alerts>0){badge.style.display='grid';badge.textContent=alerts>9?'9+':alerts;}else{badge.style.display='none';}}
   const el=document.getElementById('notifList');if(!el)return;
   el.innerHTML=list.length?list.map(n=>{
-    const act=n.id?(n.motel?`onclick="switchView('motel');setTimeout(()=>openTenant('${n.id}'),60);toggleNotifs(true)"`:`onclick="openForm('${n.id}');toggleNotifs(true)"`):'';
+    let act='';
+    if(n.id&&n.motel)act=`onclick="switchView('motel');setTimeout(()=>openTenant('${n.id}'),60);toggleNotifs(true)"`;
+    else if(n.id)act=`onclick="openForm('${n.id}');toggleNotifs(true)"`;
+    else if(n.view)act=`onclick="switchView('${n.view}');toggleNotifs(true)"`;
     return `<div class="notif${n.alert?' alert':''}" ${act}><div class="nico">${n.ico}</div><div><div class="ntitle">${escapeHtml(n.title)}</div><div class="nbody">${escapeHtml(n.body||'')}</div></div></div>`;
   }).join(''):'<div class="notif-empty">You\'re all caught up 🌸</div>';
 }
