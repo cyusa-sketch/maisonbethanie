@@ -463,6 +463,12 @@
   }
 
   /* ===== money insights ===== */
+  .ins-combined{background:#2c3a2c;color:#f0e4c4;border-radius:16px;padding:16px 18px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap}
+  .ins-combined .ic-main span{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:#cdb06a;font-weight:700}
+  .ins-combined .ic-main b{font-size:26px;font-weight:800}
+  .ins-combined .ic-split{font-size:12.5px;text-align:right;color:#e8dcc0;line-height:1.6}
+  .ins-combined .ic-split .muted{color:#a9b39a}
+  @media(max-width:600px){.ins-combined{flex-direction:column;align-items:flex-start}.ins-combined .ic-split{text-align:left}}
   .ins-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
   .ins-stat{background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:14px 15px}
   body.dark .ins-stat{background:rgba(33,30,26,.5)}
@@ -874,6 +880,7 @@
     </div>
     <div class="modal-foot">
       <button class="btn danger mgr-only" id="tenantDeleteBtn" onclick="deleteTenant()">Delete</button>
+      <button class="btn ghost" id="tenantReceiptBtn" style="display:none" onclick="openRentReceiptFromForm()">🧾 Rent receipt</button>
       <div style="display:flex;gap:10px;margin-left:auto">
         <button class="btn ghost" onclick="closeTenant()">Close</button>
         <button class="btn mgr-only" onclick="saveTenant()">Save tenant</button>
@@ -1054,7 +1061,10 @@ function renderInsights(){
   const active=weds().filter(w=>w.status!=='cancelled');
   const pays=[];active.forEach(w=>(w.payments||[]).forEach(p=>pays.push({amount:+p.amount||0,date:p.date||'',couple:w.couple,type:w.eventType||'Event'})));
   const sum=arr=>arr.reduce((a,p)=>a+p.amount,0);
-  if(!pays.length){el.innerHTML='<div class="empty"><div class="big">💸</div>No payments recorded yet.<br><span class="muted">Add payments to bookings and your money insights will appear here.</span></div>';document.getElementById('insRange').textContent='';return;}
+  const curKey0=today.slice(0,7);
+  const rentAll=rentals().reduce((a,r)=>a+(r.payments||[]).reduce((x,p)=>x+(+p.amount||0),0),0);
+  const rentMonth=rentals().reduce((a,r)=>a+rentPaidFor(r,curKey0),0);
+  if(!pays.length&&!rentAll){el.innerHTML='<div class="empty"><div class="big">💸</div>No payments recorded yet.<br><span class="muted">Add payments to bookings (or record rent) and your money insights will appear here.</span></div>';document.getElementById('insRange').textContent='';return;}
 
   const curKey=today.slice(0,7);
   const lm=new Date(now.getFullYear(),now.getMonth()-1,1);
@@ -1082,6 +1092,7 @@ function renderInsights(){
   document.getElementById('insRange').textContent='all time · RWF '+total.toLocaleString('en-US');
 
   el.innerHTML=
+    `<div class="ins-combined"><div class="ic-main"><span>Total business income</span><b>${fmtMoney(total+rentAll)}</b></div><div class="ic-split">🎪 Weddings ${fmtMoney(total)} &nbsp;·&nbsp; 🏠 Rent ${fmtMoney(rentAll)}<br><span class="muted">This month combined: ${fmtMoney(thisMonth+rentMonth)}</span></div></div>`+
     '<div class="ins-stats">'+
       `<div class="ins-stat"><div class="ins-label">This month</div><div class="ins-val">${fmtMoney(thisMonth)}</div><div class="ins-change ${cls}">${arrow} ${Math.abs(pct)}% vs last month</div></div>`+
       `<div class="ins-stat"><div class="ins-label">Year to date ${now.getFullYear()}</div><div class="ins-val">${fmtMoney(ytd)}</div><div class="ins-change flat">${pays.filter(p=>p.date.slice(0,4)==String(now.getFullYear())).length} payments</div></div>`+
@@ -1428,8 +1439,13 @@ function buildNotifications(){
   active.filter(w=>w.status==='tentative'&&endOf(w)>=today).forEach(w=>list.push({alert:true,ico:'📌',title:'Confirm hold: '+w.couple,body:'Tentative booking · '+dateLabel(w),id:w.id}));
   active.filter(w=>w.date>=today&&w.status!=='done'&&paid(w)===0&&days(w)<=14).forEach(w=>list.push({alert:true,ico:'💸',title:'No payment yet: '+w.couple,body:'No deposit recorded · '+dateLabel(w),id:w.id}));
   const curKey=today.slice(0,7);
+  // overdue rent — tenant hasn't fully paid this month
+  rentals().filter(r=>r.status!=='ended').forEach(r=>{
+    const owes=Math.max(0,(+r.rent||0)-rentPaidFor(r,curKey));
+    if(owes>0)list.push({alert:true,ico:'💸',title:'Rent due: '+(r.tenant||r.unit),body:r.unit+' owes '+fmtMoney(owes)+' for '+monthName(curKey),id:r.id,motel:true});
+  });
   const monthIncome=active.reduce((a,w)=>a+(w.payments||[]).filter(p=>(p.date||'').slice(0,7)===curKey).reduce((x,p)=>x+(+p.amount||0),0),0);
-  list.push({alert:false,ico:'💰',title:now.toLocaleDateString('en-GB',{month:'long'})+' income: '+fmtMoney(monthIncome),body:'Received so far this month'});
+  list.push({alert:false,ico:'💰',title:now.toLocaleDateString('en-GB',{month:'long'})+' income: '+fmtMoney(monthIncome),body:'Weddings received so far this month'});
   const upc=active.filter(w=>endOf(w)>=today&&w.status!=='done').length;
   list.push({alert:false,ico:'📅',title:upc+' upcoming event'+(upc===1?'':'s'),body:'Tap Bookings to see all'});
   return list;
@@ -1439,7 +1455,10 @@ function renderNotifs(){
   const badge=document.getElementById('bellBadge');
   if(badge){if(alerts>0){badge.style.display='grid';badge.textContent=alerts>9?'9+':alerts;}else{badge.style.display='none';}}
   const el=document.getElementById('notifList');if(!el)return;
-  el.innerHTML=list.length?list.map(n=>`<div class="notif${n.alert?' alert':''}" ${n.id?`onclick="openForm('${n.id}');toggleNotifs(true)"`:''}><div class="nico">${n.ico}</div><div><div class="ntitle">${escapeHtml(n.title)}</div><div class="nbody">${escapeHtml(n.body||'')}</div></div></div>`).join(''):'<div class="notif-empty">You\'re all caught up 🌸</div>';
+  el.innerHTML=list.length?list.map(n=>{
+    const act=n.id?(n.motel?`onclick="switchView('motel');setTimeout(()=>openTenant('${n.id}'),60);toggleNotifs(true)"`:`onclick="openForm('${n.id}');toggleNotifs(true)"`):'';
+    return `<div class="notif${n.alert?' alert':''}" ${act}><div class="nico">${n.ico}</div><div><div class="ntitle">${escapeHtml(n.title)}</div><div class="nbody">${escapeHtml(n.body||'')}</div></div></div>`;
+  }).join(''):'<div class="notif-empty">You\'re all caught up 🌸</div>';
 }
 function toggleNotifs(forceClose){
   const p=document.getElementById('notifPanel');if(!p)return;
@@ -1585,6 +1604,7 @@ function openTenant(arg){
     document.getElementById('t_status').value=r.status||'active';
     editingRent=JSON.parse(JSON.stringify(r.payments||[]));
     del.style.display='block';
+    document.getElementById('tenantReceiptBtn').style.display='inline-block';
   }else{
     document.getElementById('tenantTitle').textContent='Assign tenant';
     ['t_id','t_tenant','t_phone','t_rent','t_start','t_guests','t_idno','t_notes'].forEach(i=>document.getElementById(i).value='');
@@ -1592,6 +1612,7 @@ function openTenant(arg){
     if(arg)sel.value=arg;
     document.getElementById('t_status').value='active';
     del.style.display='none';
+    document.getElementById('tenantReceiptBtn').style.display='none';
   }
   const ro=!isManager();
   ['t_unit','t_status','t_tenant','t_phone','t_rent','t_start','t_guests','t_idno','t_notes'].forEach(i=>{const e=document.getElementById(i);if(e)e.disabled=ro;});
@@ -1615,6 +1636,7 @@ function addRent(){
   if(!amt||amt<=0){alert('Enter a rent amount.');return}
   editingRent.push({month,amount:amt,date:todayStr(),method:document.getElementById('rp_method').value.trim()});
   document.getElementById('rp_amount').value='';document.getElementById('rp_method').value='';
+  window._rentJustAdded={amount:amt,month};
   renderRentPayments();
 }
 function removeRent(i){if(!isManager())return;if(confirm('Remove this rent payment?')){editingRent.splice(i,1);renderRentPayments();}}
@@ -1637,6 +1659,7 @@ function saveTenant(){
   if(id){DB[DB.findIndex(x=>x.id===id)]=rec}else{DB.push(rec)}
   save();closeTenant();renderMotel();cloudUpsert(rec);
   toast('Tenant saved 🏠',unit+' · '+tenant,'success');
+  if(window._rentJustAdded){pushBoss('💵 Rent received · '+tenant+' · '+unit+' · '+fmtMoney(window._rentJustAdded.amount),'rent');window._rentJustAdded=null;}
 }
 function deleteTenant(){
   if(!isManager())return;
@@ -1686,22 +1709,60 @@ function openReceipt(id){
   document.getElementById('receiptOverlay').classList.add('open');
   document.body.classList.add('receipt-open');
 }
+function rentTotal(r){return (r.payments||[]).reduce((a,p)=>a+(+p.amount||0),0);}
+function openRentReceiptFromForm(){const id=document.getElementById('t_id').value;if(id)openRentReceipt(id);}
+function openRentReceipt(id){
+  const r=DB.find(x=>x.id===id);if(!r)return;
+  currentReceiptId=id;
+  const no='MB-R'+id.slice(-5).toUpperCase();
+  const d=new Date();const issued=`${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;
+  const pays=(r.payments||[]).slice().sort((a,b)=>(a.month||'').localeCompare(b.month||''));
+  const _cap=s=>String(s||'').replace(/\b\w/g,c=>c.toUpperCase());
+  const lines=pays.length?pays.map(p=>`<div class="rcp-line"><span>${monthName(p.month)||fmtDate(p.date)} · ${escapeHtml(p.method||'cash')}</span><b>${fmtMoney(p.amount)}</b></div>`).join(''):'<div class="rcp-line"><span>No rent recorded yet</span><b></b></div>';
+  const tl=`<div class="tlrow"><div class="tltime">${escapeHtml(r.unit)}</div><div class="tlact">${fmtMoney(r.rent)}/month${r.startDate?' · since '+fmtDate(r.startDate):''}</div></div>`+
+    pays.map(p=>`<div class="tlrow"><div class="tltime">${monthName(p.month)||fmtDate(p.date)}</div><div class="tlact">${fmtMoney(p.amount)} <span style="font-family:'Segoe UI',sans-serif;font-size:12px;color:#8a8a82">· ${escapeHtml(p.method||'payment')}</span></div></div>`).join('');
+  document.getElementById('receiptPaper').innerHTML=
+    '<div class="rcp">'+
+      `<div class="rcp-head"><div class="rcp-crest">${RECEIPT_TENT}</div><div class="rcp-brand">Maison Béthanie</div><div class="rcp-tag">APARTMENTS · KIGALI</div><div class="rcp-title">Rent Receipt</div></div>`+
+      '<div class="rcp-body">'+
+        `<div class="rcp-greet-row"><div class="rcp-greet">${escapeHtml(_cap(r.tenant))}, thank you<br>for your payment</div><div class="rcp-date">${issued}<br><b>${no}</b></div></div>`+
+        `<div class="rcp-sub">Rent for ${escapeHtml(r.unit)} at Maison Béthanie Apartments.</div>`+
+        `<div class="rcp-total"><span class="rcp-total-l">Total paid</span><span class="rcp-total-a">${fmtMoney(rentTotal(r))}</span></div>`+
+        lines+
+        '<div class="rcp-dh">Details</div>'+
+        `<div class="rcp-timeline">${tl}</div>`+
+        '<div class="rcp-foot">'+
+          `<div class="rcp-contact"><div class="rcp-ava">${TENT_CREAM}</div><div><div class="cl">Tenant</div><div class="cv">${escapeHtml(r.unit)}${r.phone?' · '+escapeHtml(r.phone):''}</div></div></div>`+
+          `<a class="rcp-btn" href="${VENUE_MAP}" target="_blank" rel="noopener">Directions →</a>`+
+        '</div>'+
+      '</div>'+
+    '</div>';
+  document.getElementById('receiptOverlay').classList.add('open');
+  document.body.classList.add('receipt-open');
+}
 function closeReceipt(){document.getElementById('receiptOverlay').classList.remove('open');document.body.classList.remove('receipt-open');}
 function printReceipt(){window.print();notifyBoss('printed');}
 function shareReceipt(){
   const w=DB.find(x=>x.id===currentReceiptId);if(!w)return;
-  const text=`Maison Béthanie — Booking Receipt\nClient: ${w.couple}\nEvent: ${w.eventType||'Event'} · ${dateLabel(w)}\nHall: ${w.hall||'—'}\nReceived: ${fmtMoney(paid(w))}\n— Maison Béthanie, Kigali`;
+  const text=w.kind==='motel'
+    ?`Maison Béthanie — Rent Receipt\nTenant: ${w.tenant}\nRoom: ${w.unit} · ${fmtMoney(w.rent)}/mo\nTotal paid: ${fmtMoney(rentTotal(w))}\n— Maison Béthanie, Kigali`
+    :`Maison Béthanie — Booking Receipt\nClient: ${w.couple}\nEvent: ${w.eventType||'Event'} · ${dateLabel(w)}\nHall: ${w.hall||'—'}\nReceived: ${fmtMoney(paid(w))}\n— Maison Béthanie, Kigali`;
   if(navigator.share){navigator.share({title:'Maison Béthanie — Receipt',text}).then(()=>notifyBoss('shared')).catch(()=>{});}
-  else{try{navigator.clipboard.writeText(text);}catch(e){}toast('Receipt summary copied','Paste it to send to your client.','success');notifyBoss('shared');}
+  else{try{navigator.clipboard.writeText(text);}catch(e){}toast('Receipt summary copied','Paste it to send.','success');notifyBoss('shared');}
 }
 let _lastBoss=0;
-async function notifyBoss(){
-  const w=DB.find(x=>x.id===currentReceiptId);if(!w||!sb)return;
-  if(Date.now()-_lastBoss<5000)return; _lastBoss=Date.now();
+async function pushBoss(message,kind){
+  if(!sb)return;
+  if(Date.now()-_lastBoss<4000)return; _lastBoss=Date.now();
   try{
-    const {error}=await sb.from('events_log').insert({kind:'receipt',message:`🧾 Receipt issued · ${w.couple} · ${fmtMoney(paid(w))}`});
-    if(!error)toast('Boss notified 🔔','A receipt alert was sent to the manager.','success');
+    const {error}=await sb.from('events_log').insert({kind:kind||'event',message});
+    if(!error)toast('Boss notified 🔔',message,'success');
   }catch(e){}
+}
+async function notifyBoss(){
+  const w=DB.find(x=>x.id===currentReceiptId);if(!w)return;
+  if(w.kind==='motel')pushBoss(`🧾 Rent receipt · ${w.tenant} · ${w.unit} · ${fmtMoney(rentTotal(w))}`,'receipt');
+  else pushBoss(`🧾 Receipt issued · ${w.couple} · ${fmtMoney(paid(w))}`,'receipt');
 }
 document.getElementById('receiptOverlay').addEventListener('click',e=>{if(e.target.id==='receiptOverlay')closeReceipt();});
 
