@@ -480,6 +480,24 @@
   .ins-combined .ic-split{font-size:12.5px;text-align:right;color:#e8dcc0;line-height:1.6}
   .ins-combined .ic-split .muted{color:#a9b39a}
   @media(max-width:600px){.ins-combined{flex-direction:column;align-items:flex-start}.ins-combined .ic-split{text-align:left}}
+  /* dashboard charts */
+  .ch-grid{display:grid;grid-template-columns:1.5fr 1fr;gap:16px}
+  .ch-card{background:var(--bg);border:1px solid var(--line);border-radius:16px;padding:16px 18px}
+  body.dark .ch-card{background:rgba(33,30,26,.5)}
+  .ch-dept{margin-bottom:16px}.ch-dept:last-child{margin-bottom:0}
+  .ch-dept-head{font-size:13px;font-weight:800;color:var(--ink);margin-bottom:8px;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+  .ch-dept-head b{font-size:13px}.ch-dept-head b.green{color:#3f6b4f}.ch-dept-head b.red{color:#b14334}
+  .ch-row{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+  .ch-key{font-size:11px;color:var(--muted);font-weight:700;width:62px;flex:0 0 auto}
+  .ch-track{position:relative;flex:1;height:22px;background:var(--line);border-radius:7px;overflow:hidden}
+  .ch-fill{height:100%;border-radius:7px;min-width:3px;transition:width .5s cubic-bezier(.4,0,.2,1)}
+  .ch-num{position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:11px;font-weight:800;color:var(--ink)}
+  .ch-occ{display:flex;align-items:center;gap:14px;height:100%}
+  .ch-donut{width:104px;height:104px;flex:0 0 auto}
+  .ch-donut-big{font-size:20px;font-weight:800;fill:var(--ink)}
+  .ch-donut-sub{font-size:9px;fill:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+  .ch-occ-info{flex:1;min-width:0}
+  @media(max-width:760px){.ch-grid{grid-template-columns:1fr}}
   .ins-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
   .ins-stat{background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:14px 15px}
   body.dark .ins-stat{background:rgba(33,30,26,.5)}
@@ -659,6 +677,10 @@
           <p class="muted" id="greetSub"></p>
         </div>
         <div class="tiles" id="tiles"></div>
+        <div class="panel">
+          <div class="panel-head"><h2>📊 Business at a glance</h2></div>
+          <div id="charts"></div>
+        </div>
         <div class="panel">
           <div class="panel-head"><h2>💰 Money insights</h2><span id="insRange" class="linkbtn" style="cursor:default"></span></div>
           <div id="insights"></div>
@@ -1150,9 +1172,52 @@ function renderDashboard(){
         <td class="right nowrap" data-label="Received">${fmtMoney(paid(w))}</td>
         </tr>`}).join('')+'</tbody></table></div>';}
 
+  renderCharts();
   renderInsights();
   renderMiniCal();
   renderTimeline();
+}
+
+/* ===== dashboard charts (lightweight inline SVG, no library) ===== */
+function renderCharts(){
+  const el=document.getElementById('charts');if(!el)return;
+  // department income / expense / profit
+  const vInc=weddingIncome(), vExp=expDeptTotal('venue');
+  const aInc=rentIncome(), aExp=expDeptTotal('apartments');
+  const maxBar=Math.max(1,vInc,vExp,aInc,aExp);
+  const bar=(val,color)=>`<div class="ch-track"><div class="ch-fill" style="width:${Math.round(val/maxBar*100)}%;background:${color}"></div><span class="ch-num">${fmtMoney(val)}</span></div>`;
+  const deptBlock=(emoji,name,inc,exp)=>{const p=inc-exp;return `<div class="ch-dept">
+      <div class="ch-dept-head">${emoji} ${name} <b class="${p<0?'red':'green'}">${fmtMoney(p)} profit</b></div>
+      <div class="ch-row"><span class="ch-key">Income</span>${bar(inc,'#9db887')}</div>
+      <div class="ch-row"><span class="ch-key">Expenses</span>${bar(exp,'#c98b7e')}</div>
+    </div>`;};
+
+  // apartments occupancy donut
+  const active=rentals().filter(r=>r.status!=='ended');
+  const occ=ROOMS.filter(room=>active.some(r=>r.unit===room)).length;
+  const tot=ROOMS.length, frac=occ/tot;
+  const C=2*Math.PI*42, dash=(frac*C).toFixed(1);
+  const cur=todayStr().slice(0,7);
+  const expected=active.reduce((a,r)=>a+(+r.rent||0),0);
+  const collected=active.reduce((a,r)=>a+rentPaidFor(r,cur),0);
+  const collPct=expected>0?Math.round(collected/expected*100):0;
+  const donut=`<div class="ch-occ">
+    <svg viewBox="0 0 100 100" class="ch-donut">
+      <circle cx="50" cy="50" r="42" fill="none" stroke="var(--line)" stroke-width="12"/>
+      <circle cx="50" cy="50" r="42" fill="none" stroke="#d8bd7e" stroke-width="12" stroke-linecap="round"
+        stroke-dasharray="${dash} ${C.toFixed(1)}" transform="rotate(-90 50 50)"/>
+      <text x="50" y="46" text-anchor="middle" class="ch-donut-big">${occ}/${tot}</text>
+      <text x="50" y="62" text-anchor="middle" class="ch-donut-sub">rooms</text>
+    </svg>
+    <div class="ch-occ-info">
+      <div class="ch-dept-head">🏠 Occupancy <b class="green">${Math.round(frac*100)}%</b></div>
+      <div class="muted" style="font-size:12px">${tot-occ} vacant</div>
+      <div class="ch-row" style="margin-top:10px"><span class="ch-key">Rent ${monthName(cur).split(' ')[0]}</span><div class="ch-track"><div class="ch-fill" style="width:${collPct}%;background:#9db887"></div><span class="ch-num">${collPct}%</span></div></div>
+      <div class="muted" style="font-size:12px">${fmtMoney(collected)} of ${fmtMoney(expected)} collected</div>
+    </div>
+  </div>`;
+
+  el.innerHTML='<div class="ch-grid"><div class="ch-card">'+deptBlock('🎪','Venue',vInc,vExp)+deptBlock('🏠','Apartments',aInc,aExp)+'</div><div class="ch-card">'+donut+'</div></div>';
 }
 
 /* ===== smart money insights ===== */
