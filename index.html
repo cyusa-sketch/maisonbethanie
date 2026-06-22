@@ -603,6 +603,8 @@
   <button class="navitem" data-view="calendar"><span class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="8" y1="2.5" x2="8" y2="6"/><line x1="16" y1="2.5" x2="16" y2="6"/></svg></span><span class="lbl">Calendar</span></button>
   <div class="side-label">Motel · Rentals</div>
   <button class="navitem" data-view="motel"><span class="ic"><svg viewBox="0 0 24 24"><path d="M3 21V9l9-6 9 6v12"/><path d="M9 21v-6h6v6"/></svg></span><span class="lbl">Apartments</span></button>
+  <div class="side-label">Finance</div>
+  <button class="navitem" data-view="expenses"><span class="ic"><svg viewBox="0 0 24 24"><path d="M3 6h18v12H3z"/><path d="M3 10h18"/><circle cx="17" cy="14" r="1.4" fill="currentColor" stroke="none"/></svg></span><span class="lbl">Expenses &amp; Profit</span></button>
   <div class="side-label">Tools</div>
   <button class="navitem" onclick="exportData()"><span class="ic"><svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg></span><span class="lbl">Backup</span></button>
   <button class="navitem mgr-only" onclick="document.getElementById('importFile').click()"><span class="ic"><svg viewBox="0 0 24 24"><path d="M12 21V9"/><path d="M7 14l5-5 5 5"/><path d="M5 3h14"/></svg></span><span class="lbl">Restore</span></button>
@@ -738,6 +740,33 @@
         <div class="panel">
           <div class="panel-head"><h2>💵 Rent — this month</h2></div>
           <div id="rentTable"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- EXPENSES & PROFIT -->
+  <section class="view" id="expenses">
+    <div class="dash">
+      <div class="dash-main">
+        <div class="greeting">
+          <h1>💰 Expenses &amp; Profit</h1>
+          <p class="muted">Income minus expenses — the real profit, per department.</p>
+        </div>
+        <div id="profitCards"></div>
+        <div class="panel">
+          <div class="panel-head">
+            <h2>🧾 Expenses</h2>
+            <div style="display:flex;gap:8px;align-items:center">
+              <select id="expFilter" onchange="renderExpenses()">
+                <option value="all">All departments</option>
+                <option value="venue">🎪 Venue</option>
+                <option value="apartments">🏠 Apartments</option>
+              </select>
+              <button class="btn mgr-only" onclick="openExpense()">+ Add expense</button>
+            </div>
+          </div>
+          <div id="expensesTable"></div>
         </div>
       </div>
     </div>
@@ -897,6 +926,33 @@
   </div>
 </div>
 
+<!-- EXPENSE MODAL -->
+<div class="overlay" id="expenseOverlay">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-head"><h2 id="expenseTitle">Add expense</h2><button class="x" onclick="closeExpense()">×</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="e_id">
+      <div class="grid2">
+        <div class="field block"><label>Department *</label>
+          <select id="e_dept"><option value="venue">🎪 Venue (weddings)</option><option value="apartments">🏠 Apartments</option></select>
+        </div>
+        <div class="field block"><label>Category</label><select id="e_cat"></select></div>
+        <div class="field block"><label>Description *</label><input id="e_label" placeholder="e.g. Generator fuel, June"></div>
+        <div class="field block"><label>Amount (RWF) *</label><input type="number" min="0" id="e_amount" placeholder="e.g. 50000"></div>
+        <div class="field block"><label>Date</label><input type="date" id="e_date"></div>
+        <div class="field block full"><label>Notes</label><textarea id="e_notes" rows="2" placeholder="Supplier, reference…"></textarea></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn danger mgr-only" id="expenseDeleteBtn" onclick="deleteExpense()">Delete</button>
+      <div style="display:flex;gap:10px;margin-left:auto">
+        <button class="btn ghost" onclick="closeExpense()">Close</button>
+        <button class="btn mgr-only" onclick="saveExpense()">Save expense</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- RECEIPT VERIFICATION -->
 <div class="overlay" id="verifyOverlay" style="z-index:400">
   <div class="modal" style="max-width:430px">
@@ -949,6 +1005,7 @@ async function cloudPull(){
   // announce bookings added from another device since last sync
   if(window._knownIds){
     DB.filter(w=>!window._knownIds.has(w.id)).forEach(w=>{
+      if(w.kind==='expense'){return;}
       if(w.kind==='motel'){
         toast('Tenant synced 🏠','From another device · '+(w.unit||'')+' · '+(w.tenant||''),'success');
       }else{
@@ -997,8 +1054,13 @@ function isPast(w){return endOf(w)<todayStr()&&w.status!=='cancelled'}
 function covers(w,ds){return ds>=w.date&&ds<=endOf(w)}
 function dateLabel(w){return isMulti(w)?fmtDate(w.date)+' → '+fmtDate(endOf(w)):fmtDate(w.date)}
 /* split data: weddings vs motel rentals (same table, kind discriminator) */
-function weds(){return DB.filter(w=>(w.kind||'wedding')!=='motel')}
+function weds(){return DB.filter(w=>!w.kind||w.kind==='wedding')}
 function rentals(){return DB.filter(w=>w.kind==='motel')}
+function expensesList(){return DB.filter(w=>w.kind==='expense')}
+const EXP_CATS=['Electricity','Security','Generator','WiFi','Cleaning','Water','Supplies','Salaries','Maintenance','Decor','Marketing','Other'];
+function expDeptTotal(dept){return expensesList().filter(e=>e.dept===dept).reduce((a,e)=>a+(+e.amount||0),0)}
+function weddingIncome(){return weds().filter(w=>w.status!=='cancelled').reduce((a,w)=>a+paid(w),0)}
+function rentIncome(){return rentals().reduce((a,r)=>a+(r.payments||[]).reduce((x,p)=>x+(+p.amount||0),0),0)}
 const STATUS_LABEL={confirmed:'Confirmed',tentative:'Tentative',done:'Completed',cancelled:'Cancelled'};
 const STATUS_BADGE={confirmed:'paid',tentative:'partial',done:'done',cancelled:'unpaid'};
 
@@ -1010,6 +1072,7 @@ function switchView(view){
   if(view==='bookings')renderBookings();
   if(view==='calendar')renderCalendar();
   if(view==='motel')renderMotel();
+  if(view==='expenses')renderExpenses();
   window.scrollTo({top:0,behavior:'smooth'});
 }
 document.querySelectorAll('.navitem[data-view]').forEach(t=>t.onclick=()=>switchView(t.dataset.view));
@@ -1121,7 +1184,7 @@ function renderInsights(){
   document.getElementById('insRange').textContent='all time · RWF '+total.toLocaleString('en-US');
 
   el.innerHTML=
-    `<div class="ins-combined"><div class="ic-main"><span>Total business income</span><b>${fmtMoney(total+rentAll)}</b></div><div class="ic-split">🎪 Weddings ${fmtMoney(total)} &nbsp;·&nbsp; 🏠 Rent ${fmtMoney(rentAll)}<br><span class="muted">This month combined: ${fmtMoney(thisMonth+rentMonth)}</span></div></div>`+
+    (()=>{const exp=expDeptTotal('venue')+expDeptTotal('apartments');const inc=total+rentAll;const prof=inc-exp;return `<div class="ins-combined"><div class="ic-main"><span>Net profit (income − expenses)</span><b style="color:${prof<0?'#e7b3a6':'#f0e4c4'}">${fmtMoney(prof)}</b></div><div class="ic-split">Income ${fmtMoney(inc)} &nbsp;·&nbsp; Expenses ${fmtMoney(exp)}<br><span class="muted">🎪 Weddings ${fmtMoney(total)} · 🏠 Rent ${fmtMoney(rentAll)}</span></div></div>`;})()+
     '<div class="ins-stats">'+
       `<div class="ins-stat"><div class="ins-label">This month</div><div class="ins-val">${fmtMoney(thisMonth)}</div><div class="ins-change ${cls}">${arrow} ${Math.abs(pct)}% vs last month</div></div>`+
       `<div class="ins-stat"><div class="ins-label">Year to date ${now.getFullYear()}</div><div class="ins-val">${fmtMoney(ytd)}</div><div class="ins-change flat">${pays.filter(p=>p.date.slice(0,4)==String(now.getFullYear())).length} payments</div></div>`+
@@ -1292,10 +1355,8 @@ function openForm(id){
   const ro=!isManager();
   ['f_couple','f_phone','f_date','f_hall','f_event','f_package','f_status','f_notes','f_multi','f_end'].forEach(i=>{const el=document.getElementById(i);if(el)el.disabled=ro;});
   if(ro)document.getElementById('modalTitle').textContent='Booking (view only)';
-  // stop the date picker from selecting past days (but keep an existing historical date editable)
-  const editId=document.getElementById('f_id').value;
-  const ex=editId?DB.find(x=>x.id===editId):null;
-  document.getElementById('f_date').min=(ex&&ex.date<todayStr())?ex.date:todayStr();
+  // past dates allowed (for historical records) — no picker minimum
+  document.getElementById('f_date').removeAttribute('min');
   document.getElementById('payDate').value=todayStr();
   renderPayments();
 }
@@ -1351,11 +1412,10 @@ function saveBooking(){
   const _pa=Number(document.getElementById('payAmount').value);
   if(_pa>0){editingPayments.push({amount:_pa,date:document.getElementById('payDate').value||todayStr(),method:document.getElementById('payMethod').value.trim()});document.getElementById('payAmount').value='';document.getElementById('payMethod').value='';}
   const id=document.getElementById('f_id').value;
-  // block dates that have already passed (but allow editing a historical booking that already had a past date)
+  // past dates are allowed for backfilling — just confirm it's intentional
   const existing=id?DB.find(w=>w.id===id):null;
   if(date<todayStr()&&!(existing&&existing.date===date)){
-    alert("⛔ You can't book a date that has already passed.\n\nPlease choose today or a future date (a future year's same day is fine).");
-    return;
+    if(!confirm('📅 '+fmtDate(date)+' is in the past.\n\nSave this as a HISTORICAL record?'))return;
   }
   const multi=document.getElementById('f_multi').checked;
   let endDate=multi?document.getElementById('f_end').value:date;
@@ -1448,7 +1508,7 @@ function importData(input){
 }
 
 function escapeHtml(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function refreshAll(){renderDashboard();renderBookings();renderCalendar();renderNotifs();if(document.getElementById('roomsGrid'))renderMotel();}
+function refreshAll(){renderDashboard();renderBookings();renderCalendar();renderNotifs();if(document.getElementById('roomsGrid'))renderMotel();if(document.getElementById('expensesTable'))renderExpenses();}
 
 /* ================= NOTIFICATIONS ================= */
 function toast(title,body,type){
@@ -1691,6 +1751,71 @@ function deleteTenant(){
   if(confirm('Remove tenant '+r.tenant+' from '+r.unit+'? This deletes their record.')){
     DB=DB.filter(x=>x.id!==id);save();closeTenant();renderMotel();cloudDelete(id);
   }
+}
+
+/* ================= EXPENSES & PROFIT ================= */
+function renderExpenses(){
+  const vInc=weddingIncome(), aInc=rentIncome();
+  const vExp=expDeptTotal('venue'), aExp=expDeptTotal('apartments');
+  const vProfit=vInc-vExp, aProfit=aInc-aExp, tProfit=(vInc+aInc)-(vExp+aExp);
+  const pc=document.getElementById('profitCards'); if(pc)pc.innerHTML='<div class="cards">'+
+    `<div class="stat"><div class="label">🎪 Venue profit</div><div class="value ${vProfit<0?'red':'green'}" style="font-size:20px">${fmtMoney(vProfit)}</div><div class="sub">${fmtMoney(vInc)} in · ${fmtMoney(vExp)} out</div></div>`+
+    `<div class="stat"><div class="label">🏠 Apartments profit</div><div class="value ${aProfit<0?'red':'green'}" style="font-size:20px">${fmtMoney(aProfit)}</div><div class="sub">${fmtMoney(aInc)} in · ${fmtMoney(aExp)} out</div></div>`+
+    `<div class="stat"><div class="label">🏦 Total net profit</div><div class="value ${tProfit<0?'red':'gold'}" style="font-size:20px">${fmtMoney(tProfit)}</div><div class="sub">all departments</div></div>`+
+    '</div>';
+  const f=document.getElementById('expFilter').value;
+  let list=expensesList().filter(e=>f==='all'||e.dept===f).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const el=document.getElementById('expensesTable');
+  if(!list.length){el.innerHTML='<div class="empty"><div class="big">🧾</div>No expenses recorded yet.<br><span class="muted mgr-only">Tap “+ Add expense” to record one.</span></div>';return;}
+  const tot=list.reduce((a,e)=>a+(+e.amount||0),0);
+  el.innerHTML='<div class="table-wrap"><table class="rtable"><thead><tr><th>Date</th><th>Dept</th><th>Category</th><th>Description</th><th class="right">Amount</th></tr></thead><tbody>'+
+    list.map(e=>`<tr class="row" onclick="openExpense('${e.id}')"><td class="nowrap" data-label="Date">${fmtDate(e.date)}</td><td data-label="Dept">${e.dept==='venue'?'🎪 Venue':'🏠 Apt'}</td><td data-label="Category">${escapeHtml(e.category||'—')}</td><td data-label="Description">${escapeHtml(e.label||'')}</td><td class="right nowrap" data-label="Amount">${fmtMoney(e.amount)}</td></tr>`).join('')+
+    `</tbody><tfoot><tr><td colspan="4" data-label="Total expenses">Total expenses (${list.length})</td><td class="right nowrap" data-label="Total">${fmtMoney(tot)}</td></tr></tfoot></table></div>`;
+}
+function openExpense(id){
+  const sel=document.getElementById('e_cat'); sel.innerHTML=EXP_CATS.map(c=>`<option>${c}</option>`).join('');
+  const del=document.getElementById('expenseDeleteBtn');
+  const e=id?expensesList().find(x=>x.id===id):null;
+  if(e){
+    document.getElementById('expenseTitle').textContent='Edit expense';
+    document.getElementById('e_id').value=e.id;
+    document.getElementById('e_dept').value=e.dept||'venue';
+    document.getElementById('e_cat').value=e.category||'Other';
+    document.getElementById('e_label').value=e.label||'';
+    document.getElementById('e_amount').value=e.amount||'';
+    document.getElementById('e_date').value=e.date||'';
+    document.getElementById('e_notes').value=e.notes||'';
+    del.style.display='block';
+  }else{
+    document.getElementById('expenseTitle').textContent='Add expense';
+    ['e_id','e_label','e_amount','e_notes'].forEach(i=>document.getElementById(i).value='');
+    const f=document.getElementById('expFilter').value; document.getElementById('e_dept').value=f==='apartments'?'apartments':'venue';
+    document.getElementById('e_cat').value='Other';
+    document.getElementById('e_date').value=todayStr();
+    del.style.display='none';
+  }
+  const ro=!isManager();['e_dept','e_cat','e_label','e_amount','e_date','e_notes'].forEach(i=>{const x=document.getElementById(i);if(x)x.disabled=ro;});
+  document.getElementById('expenseOverlay').classList.add('open');
+}
+function closeExpense(){document.getElementById('expenseOverlay').classList.remove('open');}
+document.getElementById('expenseOverlay').addEventListener('click',e=>{if(e.target.id==='expenseOverlay')closeExpense();});
+function saveExpense(){
+  if(!isManager()){toast('View-only access 👁️','Use the manager passcode to record expenses.','warn');return;}
+  const label=document.getElementById('e_label').value.trim();
+  const amount=+document.getElementById('e_amount').value||0;
+  if(!label){alert('Please enter a description.');return}
+  if(!amount){alert('Please enter the amount.');return}
+  const id=document.getElementById('e_id').value;
+  const rec={id:id||uid(),kind:'expense',dept:document.getElementById('e_dept').value,category:document.getElementById('e_cat').value,label,amount,date:document.getElementById('e_date').value||todayStr(),notes:document.getElementById('e_notes').value.trim()};
+  if(id){DB[DB.findIndex(x=>x.id===id)]=rec}else{DB.push(rec)}
+  save();closeExpense();renderExpenses();renderDashboard();cloudUpsert(rec);
+  if(window._knownIds)window._knownIds.add(rec.id);
+  toast('Expense saved 🧾',(rec.dept==='venue'?'Venue':'Apartments')+' · '+fmtMoney(rec.amount),'success');
+}
+function deleteExpense(){
+  if(!isManager())return;
+  const id=document.getElementById('e_id').value;const e=DB.find(x=>x.id===id);if(!e)return;
+  if(confirm('Delete this expense ('+fmtMoney(e.amount)+')?')){DB=DB.filter(x=>x.id!==id);save();closeExpense();renderExpenses();renderDashboard();cloudDelete(id);}
 }
 
 /* ================= BOOKING RECEIPT ================= */
