@@ -26,7 +26,8 @@
 <meta name="apple-mobile-web-app-title" content="Béthanie">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+<script src="qrcode.min.js"></script>
+<script src="jspdf.umd.min.js"></script>
 <script src="html2canvas.min.js"></script>
 <style>
   :root{
@@ -214,8 +215,10 @@
     .overlay{padding:0;align-items:stretch}
     .modal{max-width:none;border-radius:0;min-height:100%;display:flex;flex-direction:column}
     .modal-body{flex:1 1 auto;overflow-y:auto}
-    .modal-head{position:sticky;top:0;background:#fff;z-index:2}
-    .modal-foot{position:sticky;bottom:0;background:#fff;z-index:2}
+    .modal-head{position:sticky;top:0;background:#fff;z-index:2;padding-top:calc(env(safe-area-inset-top) + 16px)}
+    body.dark .modal-head{background:#211e1a}
+    .modal-foot{position:sticky;bottom:0;background:#fff;z-index:2;padding-bottom:calc(env(safe-area-inset-bottom) + 16px)}
+    body.dark .modal-foot{background:#211e1a}
     .modal-foot .btn{flex:1 1 auto}
     .pay-add{flex-direction:column}
     .pay-add input,.pay-add .btn{width:100%}
@@ -837,14 +840,14 @@
 <!-- RECEIPT OVERLAY -->
 <div class="overlay" id="receiptOverlay">
   <div class="modal" style="max-width:600px">
-    <div class="modal-head"><h2>Booking receipt</h2><button class="x" onclick="closeReceipt()">×</button></div>
+    <div class="modal-head"><h2 id="receiptModalTitle">Booking receipt</h2><button class="x" onclick="closeReceipt()">×</button></div>
     <div class="modal-body"><div id="receiptPaper" class="receipt-paper"></div></div>
     <div class="modal-foot">
       <button class="btn ghost" onclick="closeReceipt()">Close</button>
       <div style="display:flex;gap:10px;margin-left:auto">
         <button class="btn ghost" onclick="printReceipt()">🖨️ Print</button>
-        <button class="btn ghost" onclick="shareReceiptImg()">📤 Share</button>
-        <button class="btn" onclick="saveReceiptImg()">📥 Save image</button>
+        <button class="btn ghost" onclick="shareReceiptPDF()">📤 Share PDF</button>
+        <button class="btn" onclick="saveReceiptPDF()">📄 Save PDF</button>
       </div>
     </div>
   </div>
@@ -891,6 +894,14 @@
         <button class="btn mgr-only" onclick="saveTenant()">Save tenant</button>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- RECEIPT VERIFICATION -->
+<div class="overlay" id="verifyOverlay" style="z-index:400">
+  <div class="modal" style="max-width:430px">
+    <div class="modal-head"><h2>Receipt verification</h2><button class="x" onclick="document.getElementById('verifyOverlay').classList.remove('open')">×</button></div>
+    <div class="modal-body"><div id="verifyBody" style="padding:6px 4px"></div></div>
   </div>
 </div>
 
@@ -1691,6 +1702,7 @@ function openReceiptFromForm(){const id=document.getElementById('f_id').value;if
 function openReceipt(id){
   const w=DB.find(x=>x.id===id);if(!w)return;
   currentReceiptId=id;
+  document.getElementById('receiptModalTitle').textContent='Booking receipt';
   const no='MB-'+id.slice(-6).toUpperCase();
   const d=new Date();
   const issued=`${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;
@@ -1727,6 +1739,7 @@ function openRentReceiptFromForm(){const id=document.getElementById('t_id').valu
 function openRentReceipt(id){
   const r=DB.find(x=>x.id===id);if(!r)return;
   currentReceiptId=id;
+  document.getElementById('receiptModalTitle').textContent='Rent receipt';
   const no='MB-R'+id.slice(-5).toUpperCase();
   const d=new Date();const issued=`${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;
   const pays=(r.payments||[]).slice().sort((a,b)=>(a.month||'').localeCompare(b.month||''));
@@ -1792,6 +1805,87 @@ function shareReceiptText(){
   if(navigator.share){navigator.share({title:'Maison Béthanie — Receipt',text}).then(()=>notifyBoss()).catch(()=>{});}
   else{try{navigator.clipboard.writeText(text);}catch(e){}toast('Receipt summary copied','Paste it to send.','success');notifyBoss();}
 }
+
+/* ===== PDF receipt (crisp vector + verify QR) ===== */
+function _pdfName(){const w=DB.find(x=>x.id===currentReceiptId);const who=w?(w.kind==='motel'?w.tenant:w.couple):'receipt';return 'Maison-Bethanie-Receipt-'+String(who||'').replace(/[^a-z0-9]+/gi,'-').replace(/^-|-$/g,'')+'.pdf';}
+async function loadTentImg(){
+  if(window._tentImg!==undefined)return window._tentImg;
+  try{const b=await fetch('tent-gold.png').then(r=>r.blob());window._tentImg=await new Promise(res=>{const fr=new FileReader();fr.onload=()=>res(fr.result);fr.readAsDataURL(b);});}
+  catch(e){window._tentImg=null;}
+  return window._tentImg;
+}
+function buildReceiptData(w){
+  const _cap=s=>String(s||'').replace(/\b\w/g,c=>c.toUpperCase());
+  const d=new Date();const issued=`${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;
+  const verify=location.origin+location.pathname+'?verify='+w.id;
+  if(w.kind==='motel'){
+    const pays=(w.payments||[]).slice().sort((a,b)=>(a.month||'').localeCompare(b.month||''));
+    return {tag:'APARTMENTS · KIGALI',title:'Rent Receipt',name:_cap(w.tenant),no:'MB-R'+w.id.slice(-5).toUpperCase(),issued,
+      sub:`Rent for ${w.unit} at Maison Béthanie Apartments.`,total:rentTotal(w),
+      lines:pays.length?pays.map(p=>({label:(monthName(p.month)||fmtDate(p.date))+' · '+(p.method||'cash'),amount:fmtMoney(p.amount)})):[{label:'No rent recorded yet',amount:''}],
+      timeline:[{time:w.unit,act:fmtMoney(w.rent)+'/month'+(w.startDate?' · since '+fmtDate(w.startDate):'')}].concat(pays.map(p=>({time:monthName(p.month)||fmtDate(p.date),act:fmtMoney(p.amount)+' · '+(p.method||'payment')}))),
+      footL:'Tenant',footV:w.unit+(w.phone?' · '+w.phone:''),verify};
+  }
+  const pays=(w.payments||[]).slice().sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+  const past=endOf(w)<todayStr();const ev=(w.eventType||'event').toLowerCase();
+  return {tag:'WEDDINGS · KIGALI',title:'Booking Receipt',name:_cap((w.couple||'').split(/\s*[&,]\s*|\s+and\s+/i)[0]||w.couple),no:'MB-'+w.id.slice(-6).toUpperCase(),issued,
+    sub:past?`We hope you enjoyed your ${ev} with us.`:`Thank you for choosing Maison Béthanie for your ${ev}.`,total:paid(w),
+    lines:pays.length?pays.map(p=>({label:fmtDate(p.date)+' · '+(p.method||'cash'),amount:fmtMoney(p.amount)})):[{label:'No payments recorded yet',amount:''}],
+    timeline:[{time:dateLabel(w),act:(w.eventType||'Event')+(w.hall?' · '+w.hall:'')}].concat(pays.map(p=>({time:fmtDate(p.date),act:fmtMoney(p.amount)+' · '+(p.method||'payment')}))),
+    footL:'Venue',footV:'Maison Béthanie · Kigali',verify};
+}
+function _drawQR(doc,text,x,y,size){
+  const q=qrcode(0,'M');q.addData(text);q.make();const n=q.getModuleCount();const cell=size/n;
+  doc.setFillColor(35,40,30);
+  for(let r=0;r<n;r++)for(let c=0;c<n;c++){if(q.isDark(r,c))doc.rect(x+c*cell,y+r*cell,cell,cell,'F');}
+}
+async function drawReceiptPDF(data){
+  const { jsPDF }=window.jspdf; const W=96;
+  const H=Math.max(175, 100 + data.lines.length*6 + data.timeline.length*11 + 38);
+  const doc=new jsPDF({unit:'mm',format:[W,H],compress:true});
+  doc.setFillColor(44,58,44);doc.rect(0,0,W,50,'F');
+  const tent=await loadTentImg(); if(tent){try{doc.addImage(tent,'PNG',W/2-10,6,20,14);}catch(e){}}
+  doc.setTextColor(240,228,196);doc.setFont('times','normal');doc.setFontSize(20);doc.text('Maison Béthanie',W/2,29,{align:'center'});
+  doc.setTextColor(205,176,106);doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.text(data.tag,W/2,33.5,{align:'center',charSpace:1});
+  doc.setFont('times','normal');doc.setFontSize(25);doc.setTextColor(240,228,196);doc.text(data.title,W/2,45,{align:'center'});
+  let y=60;
+  doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(138,138,130);doc.text(data.issued,W-8,y-4,{align:'right'});
+  doc.setTextColor(169,140,74);doc.setFont('helvetica','bold');doc.setFontSize(8);doc.text(data.no,W-8,y,{align:'right'});
+  doc.setFont('times','bold');doc.setFontSize(15);doc.setTextColor(42,38,32);
+  const gl=doc.splitTextToSize(data.name+', thank you',W-42);doc.text(gl,8,y);y+=gl.length*6+1;
+  doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(122,122,114);
+  const sl=doc.splitTextToSize(data.sub,W-16);doc.text(sl,8,y);y+=sl.length*4+5;
+  doc.setDrawColor(231,226,214);doc.setLineWidth(0.3);doc.line(8,y,W-8,y);y+=7;
+  doc.setFont('times','bold');doc.setFontSize(19);doc.setTextColor(191,160,90);doc.text('Total',8,y);doc.text(fmtMoney(data.total),W-8,y,{align:'right'});
+  y+=3;doc.line(8,y,W-8,y);y+=6;
+  data.lines.forEach(l=>{doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(90,90,82);doc.text(l.label,8,y);if(l.amount){doc.setFont('helvetica','bold');doc.setTextColor(35,33,28);doc.text(l.amount,W-8,y,{align:'right'});}y+=4;doc.setDrawColor(240,238,232);doc.line(8,y,W-8,y);y+=2;});
+  y+=4;
+  doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(42,38,32);doc.text('Details',8,y);y+=6;
+  data.timeline.forEach(t=>{doc.setFillColor(205,176,106);doc.rect(8,y-2.6,2,2,'F');doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor(191,160,90);doc.text(t.time,12,y);y+=4;doc.setFont('times','normal');doc.setFontSize(11);doc.setTextColor(42,38,32);doc.text(t.act,12,y);y+=7;});
+  y+=2;doc.setDrawColor(231,226,214);doc.line(8,y,W-8,y);y+=5;
+  try{_drawQR(doc,data.verify,8,y,24);}catch(e){}
+  doc.setFont('helvetica','normal');doc.setFontSize(6);doc.setTextColor(138,138,130);doc.text('Scan to verify',8,y+27);
+  doc.setFont('helvetica','bold');doc.setFontSize(6.5);doc.setTextColor(154,149,138);doc.text(data.footL.toUpperCase(),W-8,y+9,{align:'right'});
+  doc.setFont('times','normal');doc.setFontSize(11);doc.setTextColor(42,38,32);doc.text(data.footV,W-8,y+14,{align:'right'});
+  return doc;
+}
+async function saveReceiptPDF(){
+  const w=DB.find(x=>x.id===currentReceiptId);if(!w)return;
+  if(!window.jspdf||!window.jspdf.jsPDF){return saveReceiptImg();}
+  try{const doc=await drawReceiptPDF(buildReceiptData(w));doc.save(_pdfName());toast('Receipt saved 📄','PDF downloaded to your device.','success');notifyBoss();}
+  catch(e){saveReceiptImg();}
+}
+async function shareReceiptPDF(){
+  const w=DB.find(x=>x.id===currentReceiptId);if(!w)return;
+  if(!window.jspdf||!window.jspdf.jsPDF){return shareReceiptImg();}
+  try{
+    const doc=await drawReceiptPDF(buildReceiptData(w));
+    const blob=doc.output('blob');
+    const file=new File([blob],_pdfName(),{type:'application/pdf'});
+    if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:'Maison Béthanie — Receipt'});notifyBoss();}catch(e){}}
+    else{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=file.name;document.body.appendChild(a);a.click();a.remove();toast('Saved as PDF 📄','Sharing not available here — attach the PDF in WhatsApp.','info');notifyBoss();}
+  }catch(e){shareReceiptImg();}
+}
 let _lastBoss=0;
 async function pushBoss(message,kind){
   if(!sb)return;
@@ -1807,6 +1901,25 @@ async function notifyBoss(){
   else pushBoss(`🧾 Receipt issued · ${w.couple} · ${fmtMoney(paid(w))}`,'receipt');
 }
 document.getElementById('receiptOverlay').addEventListener('click',e=>{if(e.target.id==='receiptOverlay')closeReceipt();});
+
+/* ---------- receipt verification (anti-forgery) ---------- */
+async function showVerify(id){
+  const ov=document.getElementById('verifyOverlay'),body=document.getElementById('verifyBody');
+  body.innerHTML='<div class="muted" style="text-align:center;padding:34px">Checking records…</div>';
+  ov.classList.add('open');
+  let rec=null;
+  try{ if(typeof sb!=='undefined'&&sb){const {data}=await sb.from('weddings').select('payload').eq('id',id).maybeSingle();rec=data&&data.payload;} }catch(e){}
+  if(!rec)rec=DB.find(x=>x.id===id);
+  if(!rec){body.innerHTML='<div style="text-align:center;padding:20px"><div style="font-size:42px">⚠️</div><h2 style="color:var(--red);margin:8px 0">Not a valid receipt</h2><p class="muted" style="font-size:13px">This receipt was not found in Maison Béthanie’s records. It may be forged or cancelled.</p></div>';return;}
+  const isM=rec.kind==='motel',total=isM?rentTotal(rec):paid(rec);
+  body.innerHTML='<div style="text-align:center;padding:6px 0 14px"><div style="font-size:42px">✅</div><h2 style="color:var(--green);margin:8px 0 2px">Genuine receipt</h2><p class="muted" style="font-size:13px">Verified against Maison Béthanie’s official records.</p></div>'+
+    '<div style="border-top:1px solid var(--line);padding-top:14px;font-size:14px;line-height:2">'+
+    `<div><b>${isM?'Tenant':'Client'}:</b> ${escapeHtml(isM?rec.tenant:rec.couple)}</div>`+
+    (isM?`<div><b>Room:</b> ${escapeHtml(rec.unit)} · ${fmtMoney(rec.rent)}/month</div>`:`<div><b>Event:</b> ${escapeHtml(rec.eventType||'Event')} · ${dateLabel(rec)}${rec.hall?' · '+escapeHtml(rec.hall):''}</div>`)+
+    `<div><b>Total ${isM?'paid':'received'}:</b> <span style="color:var(--green);font-weight:800">${fmtMoney(total)}</span></div>`+
+    '</div>';
+}
+document.getElementById('verifyOverlay').addEventListener('click',e=>{if(e.target.id==='verifyOverlay')e.currentTarget.classList.remove('open');});
 
 /* ---------- passcode lock ---------- */
 const PASS_MANAGER='2e064c30dfe840ff76432c401a0d0c19f0b30d823f60fd378353a6a63e431e75';
@@ -1871,6 +1984,8 @@ function startApp(){
 }
 if(isUnlocked()){closeLock();applyRole();startApp();}
 else{document.body.classList.add('locked');const _i=document.getElementById('lockInput');if(_i)setTimeout(()=>_i.focus(),120);}
+/* public receipt verification via QR link (works without unlocking) */
+(function(){const vp=new URLSearchParams(location.search).get('verify');if(vp)setTimeout(()=>showVerify(vp),400);})();
 
 /* ---------- PWA: register service worker for offline + install ---------- */
 if('serviceWorker' in navigator){

@@ -1,6 +1,6 @@
 /* Maison Béthanie service worker — offline support + auto-update + push */
-const CACHE = 'mb-v5';
-const ASSETS = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './html2canvas.min.js'];
+const CACHE = 'mb-v6';
+const ASSETS = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './html2canvas.min.js', './jspdf.umd.min.js', './qrcode.min.js', './tent-gold.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
