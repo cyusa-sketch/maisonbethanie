@@ -616,9 +616,8 @@
   <div class="lock-card">
     <svg width="60" height="42" viewBox="0 0 100 70" style="margin-bottom:4px"><path d="M8 46 C16 26 30 16 50 13 C70 16 84 26 92 46 q-4.2 8 -8.4 0 q-4.2 8 -8.4 0 q-4.2 8 -8.4 0 q-4.2 8 -8.4 0 q-4.2 8 -8.4 0 q-4.2 8 -8.4 0 q-4.2 8 -8.4 0 q-4.2 8 -8.4 0 q-4.2 8 -8.4 0 q-4.2 8 -8.4 0 Z" fill="#2c3a2c"/><path d="M50 5 L59 7.5 L50 10 Z" fill="#2c3a2c"/><g stroke="#2c3a2c" stroke-width="2.6" stroke-linecap="round" fill="none"><path d="M50 13 L50 5"/><path d="M13 50 L13 66"/><path d="M50 50 L50 66"/><path d="M87 50 L87 66"/><path d="M8 66 L92 66"/></g></svg>
     <h1>Maison Béthanie</h1>
-    <p>Sign in to continue</p>
-    <input type="email" id="lockEmail" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="Email (or leave blank for passcode)" oninput="document.getElementById('lockErr').textContent=''" onkeydown="if(event.key==='Enter')tryUnlock()">
-    <input type="password" id="lockInput" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="Password / passcode" oninput="document.getElementById('lockErr').textContent=''" onkeydown="if(event.key==='Enter')tryUnlock()">
+    <p>Enter passcode to continue</p>
+    <input type="password" id="lockInput" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="Passcode" oninput="document.getElementById('lockErr').textContent=''" onkeydown="if(event.key==='Enter')tryUnlock()">
     <button class="lock-btn" onclick="tryUnlock()">Unlock</button>
     <div id="lockErr" class="lock-err"></div>
     <label class="lock-remember"><input type="checkbox" id="lockRemember" checked> Stay unlocked on this device</label>
@@ -1010,6 +1009,8 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+/* App version — BUMP THIS STRING ON EVERY DEPLOY so devices auto-update. */
+const APP_VERSION='2026-06-22-07';
 const KEY='maisonbethanie_weddings_v1';
 /* ===== Supabase cloud sync config ===== */
 const SUPA_URL='https://urrxcgjogqirvanajffq.supabase.co';
@@ -1065,13 +1066,37 @@ async function cloudPull(){
   save();refreshAll();setCloudStatus('synced');
 }
 let _refreshing2=false;
+/* Fetch the live page from the network and see if a newer app version is deployed. */
+async function isNewVersionAvailable(){
+  try{
+    const r=await fetch('./index.html?_v='+Date.now(),{cache:'no-store'});
+    if(!r.ok)return false;
+    const t=await r.text();
+    const m=t.match(/APP_VERSION\s*=\s*'([^']+)'/);
+    return !!(m && m[1] && m[1]!==APP_VERSION);
+  }catch(e){return false;}
+}
+/* Wipe caches + service worker so the next load pulls 100% fresh code, then reload. */
+async function applyAppUpdate(){
+  try{
+    if('serviceWorker' in navigator){const regs=await navigator.serviceWorker.getRegistrations();for(const r of regs){try{await r.unregister();}catch(_){}}}
+    if(window.caches){const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)));}
+  }catch(e){}
+  location.reload();
+}
 async function refreshNow(){
   if(_refreshing2)return; _refreshing2=true;
   const b=document.getElementById('refreshBtn'); if(b)b.classList.add('spinning');
   try{
-    if(sb){await cloudPull();toast('Up to date ✅','Latest data loaded from the cloud.','success');}
-    else{refreshAll();}
-    if('serviceWorker' in navigator){navigator.serviceWorker.getRegistration().then(r=>r&&r.update()).catch(()=>{});}
+    if(sb)await cloudPull();
+    if(await isNewVersionAvailable()){
+      toast('Updating the app… ⬇️','A new version is available — reloading now.','success');
+      sessionStorage.setItem('mb_updchk','1');
+      setTimeout(applyAppUpdate,800);
+      return;
+    }
+    refreshAll();
+    toast('Up to date ✅','Latest data and app version loaded.','success');
   }catch(e){toast('Couldn\'t refresh','Check your internet and try again.','warn');}
   finally{ setTimeout(()=>{_refreshing2=false; if(b)b.classList.remove('spinning');},600); }
 }
@@ -2211,20 +2236,7 @@ function _lockFail(msg){
 }
 async function tryUnlock(){
   const inp=document.getElementById('lockInput');
-  const email=(document.getElementById('lockEmail').value||'').trim();
   const store=document.getElementById('lockRemember').checked?localStorage:sessionStorage;
-  // Email present -> real Supabase account sign-in.
-  if(email){
-    if(!sb){_lockFail('⚠️ Cloud not reachable — try again when online.');return;}
-    const btn=document.querySelector('.lock-btn');const ot=btn.textContent;btn.textContent='Signing in…';btn.disabled=true;
-    const {data,error}=await sb.auth.signInWithPassword({email,password:inp.value});
-    btn.textContent=ot;btn.disabled=false;
-    if(error||!data||!data.session){_lockFail('❌ Wrong email or password.');return;}
-    store.setItem('mb_role',roleForEmail(data.user.email));
-    closeLock();applyRole();startApp();
-    return;
-  }
-  // No email -> legacy passcode (kept during the transition to accounts).
   const h=await _sha(inp.value.trim().toLowerCase());
   const role=h===PASS_MANAGER?'manager':(h===PASS_MONITOR?'monitor':null);
   if(role){
@@ -2234,11 +2246,9 @@ async function tryUnlock(){
 }
 function closeLock(){document.getElementById('lockScreen').style.display='none';document.body.classList.remove('locked');}
 function lockApp(){['mb_role','mb_unlocked'].forEach(k=>{localStorage.removeItem(k);sessionStorage.removeItem(k);});if(sb)sb.auth.signOut().catch(()=>{});location.reload();}
-async function initLock(){
-  // Restore a real account session first (survives reloads on its own).
-  if(sb){try{const {data}=await sb.auth.getSession();if(data&&data.session){const r=getRole()||roleForEmail(data.session.user.email);(localStorage.getItem('mb_role')?localStorage:sessionStorage).setItem('mb_role',r);closeLock();applyRole();startApp();return;}}catch(_){}}
+function initLock(){
   if(isUnlocked()){closeLock();applyRole();startApp();}
-  else{document.body.classList.add('locked');const i=document.getElementById('lockEmail')||document.getElementById('lockInput');if(i)setTimeout(()=>i.focus(),100);}
+  else{document.body.classList.add('locked');const i=document.getElementById('lockInput');if(i)setTimeout(()=>i.focus(),100);}
 }
 
 /* ---------- dark mode ---------- */
@@ -2276,6 +2286,18 @@ if('serviceWorker' in navigator){
   navigator.serviceWorker.addEventListener('controllerchange',()=>{if(_refreshing)return;_refreshing=true;location.reload();});
   window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').then(reg=>reg.update()).catch(()=>{}));
 }
+/* Auto-check for a newer deployed version shortly after load + whenever the app
+   regains focus, so the boss's phone updates on its own without reinstalling. */
+async function autoUpdateCheck(){
+  if(sessionStorage.getItem('mb_updchk')==='1')return;
+  if(typeof isNewVersionAvailable==='function' && await isNewVersionAvailable()){
+    sessionStorage.setItem('mb_updchk','1');
+    if(typeof toast==='function')toast('Updating the app… ⬇️','Loading the newest version.','success');
+    setTimeout(applyAppUpdate,800);
+  }
+}
+window.addEventListener('load',()=>setTimeout(autoUpdateCheck,3000));
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)autoUpdateCheck();});
 
 /* ---------- PWA: install / "download" the app ---------- */
 let deferredPrompt=null;
