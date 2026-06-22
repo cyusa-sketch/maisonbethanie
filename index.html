@@ -27,7 +27,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="html2canvas.min.js"></script>
 <style>
   :root{
     --bg:#FFF9EB; --card:#FFFDF6; --ink:#23291f; --muted:#7d8276;
@@ -298,6 +298,8 @@
   .top-actions{display:flex;gap:8px;margin-left:auto}
   .round{width:42px;height:42px;border-radius:50%;background:#2c3a2c;color:#FFF9EB;display:grid;place-items:center;font-size:17px;transition:transform .15s,box-shadow .2s;box-shadow:var(--shadow)}
   .round.light{background:#d8bd7e;color:#27201f}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .round.spinning svg{animation:spin .8s linear infinite}
   .round:hover{transform:translateY(-2px);box-shadow:0 8px 18px rgba(0,0,0,.15)}
 
   /* dashboard grid */
@@ -625,6 +627,7 @@
         <div id="notifList"></div>
       </div>
     </div>
+    <button class="round light" id="refreshBtn" title="Refresh / get latest" onclick="refreshNow()"><svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg></button>
     <button class="round light" id="themeBtn" title="Toggle dark mode" onclick="toggleTheme()"></button>
     <button class="round light" title="Backup" onclick="exportData()"><svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg></button>
     <button class="round light mgr-only" title="Restore" onclick="document.getElementById('importFile').click()"><svg viewBox="0 0 24 24"><path d="M12 21V9"/><path d="M7 14l5-5 5 5"/><path d="M5 3h14"/></svg></button>
@@ -946,6 +949,19 @@ async function cloudPull(){
   window._knownIds=new Set(DB.map(w=>w.id));
   save();refreshAll();setCloudStatus('synced');
 }
+let _refreshing2=false;
+async function refreshNow(){
+  if(_refreshing2)return; _refreshing2=true;
+  const b=document.getElementById('refreshBtn'); if(b)b.classList.add('spinning');
+  try{
+    if(sb){await cloudPull();toast('Up to date ✅','Latest data loaded from the cloud.','success');}
+    else{refreshAll();}
+    if('serviceWorker' in navigator){navigator.serviceWorker.getRegistration().then(r=>r&&r.update()).catch(()=>{});}
+  }catch(e){toast('Couldn\'t refresh','Check your internet and try again.','warn');}
+  finally{ setTimeout(()=>{_refreshing2=false; if(b)b.classList.remove('spinning');},600); }
+}
+/* auto-refresh when the app regains focus (you switched back to it) */
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden && sb && isUnlocked&&isUnlocked()){ cloudPull(); } });
 async function initCloud(){
   if(!sb){setCloudStatus('local');return;}
   setCloudStatus('saving');
