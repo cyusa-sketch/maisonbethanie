@@ -160,12 +160,27 @@
   .cal-head h2{font-size:18px}
   .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
   .cal-dow{font-size:11px;font-weight:700;color:var(--muted);text-align:center;padding:4px 0;text-transform:uppercase}
-  .cal-cell{min-height:74px;border:1px solid var(--line);border-radius:9px;padding:6px;font-size:12px;background:#fff}
+  .cal-cell{min-height:78px;border:1px solid var(--line);border-radius:9px;padding:5px;font-size:12px;background:#fff;transition:background .15s,box-shadow .15s}
   .cal-cell.empty{background:transparent;border:none}
-  .cal-cell.today{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold)}
-  .cal-day{font-weight:600;color:var(--muted)}
-  .cal-ev{margin-top:4px;background:var(--gold);color:#fff;border-radius:5px;padding:2px 5px;font-size:11px;font-weight:600;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .cal-ev.done{background:#bbb}
+  .cal-cell.booked{background:#fbf7ee}
+  body.dark .cal-cell{background:rgba(33,30,26,.45)}body.dark .cal-cell.booked{background:rgba(216,189,126,.08)}
+  .cal-cell.free{cursor:pointer}
+  .cal-cell.free:hover{background:#f3f7ef;box-shadow:inset 0 0 0 1.5px var(--gold)}
+  body.dark .cal-cell.free:hover{background:rgba(157,184,135,.12)}
+  .cal-cell.today{border-color:var(--gold);box-shadow:0 0 0 1.5px var(--gold)}
+  .cal-day{font-weight:700;color:var(--muted);display:flex;align-items:center;gap:4px}
+  .cal-dot{width:6px;height:6px;border-radius:50%;background:var(--gold)}
+  .cal-ev{margin-top:3px;background:var(--ec,#5d7d4f);color:#fff;border-radius:5px;padding:2px 6px;font-size:10.5px;font-weight:700;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.45}
+  .cal-ev.span-start{border-top-right-radius:0;border-bottom-right-radius:0;margin-right:-5px}
+  .cal-ev.span-mid{border-radius:0;margin-left:-5px;margin-right:-5px}
+  .cal-ev.span-end{border-top-left-radius:0;border-bottom-left-radius:0;margin-left:-5px}
+  .cal-ev.tent{background:repeating-linear-gradient(45deg,var(--ec,#5d7d4f),var(--ec,#5d7d4f) 5px,rgba(255,255,255,.35) 5px,rgba(255,255,255,.35) 10px)}
+  .cal-more{margin-top:3px;font-size:10px;font-weight:700;color:var(--muted);cursor:pointer;padding:1px 5px}
+  .cal-more:hover{color:var(--ink)}
+  .cal-legend{display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+  .cal-leg{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--ink);font-weight:600}
+  .cal-leg i{width:13px;height:13px;border-radius:4px;display:inline-block}
+  .cal-leg i.lg-tent{background:repeating-linear-gradient(45deg,#777,#777 3px,#ccc 3px,#ccc 6px)}
 
   .muted{color:var(--muted)}
   .right{text-align:right}
@@ -751,6 +766,7 @@
         <button class="btn ghost sm" onclick="calMove(1)">Next ›</button>
       </div>
       <div class="cal-grid" id="calGrid"></div>
+      <div class="cal-legend" id="calLegend"></div>
     </div>
   </section>
 
@@ -1391,7 +1407,7 @@ function deleteBookingById(id){
 }
 
 /* ---------- form / modal ---------- */
-function openForm(id){
+function openForm(id,prefillDate){
   editingPayments=[];
   const m=document.getElementById('overlay');
   m.classList.add('open');
@@ -1421,6 +1437,7 @@ function openForm(id){
     document.getElementById('f_package').value='Design & Hall Access';
     document.getElementById('f_status').value='confirmed';
     document.getElementById('f_multi').checked=false;
+    if(prefillDate)document.getElementById('f_date').value=prefillDate;
     del.style.display='none';
     document.getElementById('receiptBtn').style.display='none';
   }
@@ -1537,23 +1554,45 @@ function deleteBooking(){
 
 /* ---------- calendar ---------- */
 function calMove(n){calRef.setMonth(calRef.getMonth()+n);renderCalendar()}
+const CAL_PALETTE=['#5d7d4f','#c79a3e','#b3674e','#6a7b9b','#8a6d9b','#3f8f7d','#a8743f','#7a8c4a'];
+function evColor(t){let h=0;const s=(t||'Event').toLowerCase();for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))>>>0;return CAL_PALETTE[h%CAL_PALETTE.length];}
 function renderCalendar(){
   const y=calRef.getFullYear(),m=calRef.getMonth();
   document.getElementById('calTitle').textContent=calRef.toLocaleDateString('en-GB',{month:'long',year:'numeric'});
   const first=new Date(y,m,1).getDay();
   const days=new Date(y,m+1,0).getDate();
   const today=todayStr();
+  const canBook=isManager();
+  const typesSeen={};
   let html=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d=>`<div class="cal-dow">${d}</div>`).join('');
   for(let i=0;i<first;i++)html+='<div class="cal-cell empty"></div>';
   for(let d=1;d<=days;d++){
     const ds=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const evs=weds().filter(w=>covers(w,ds)&&w.status!=='cancelled');
-    html+=`<div class="cal-cell${ds===today?' today':''}"><div class="cal-day">${d}</div>`+
-      evs.map(w=>{const tag=isMulti(w)?(ds===w.date?'▶ ':(ds===endOf(w)?'◀ ':'• ')):'';
-        return `<div class="cal-ev ${w.status==='done'?'done':''}" onclick="openForm('${w.id}')" title="${escapeHtml(w.couple)} (${dateLabel(w)})">${tag}${escapeHtml(w.couple)}</div>`}).join('')+
-      `</div>`;
+    const evs=weds().filter(w=>covers(w,ds)&&w.status!=='cancelled').sort((a,b)=>a.date.localeCompare(b.date));
+    const isToday=ds===today;
+    const shown=evs.slice(0,3), extra=evs.length-shown.length;
+    const pills=shown.map(w=>{
+      const type=w.eventType||'Event'; typesSeen[type]=evColor(type);
+      const col=w.status==='done'?'#9b9b93':evColor(type);
+      // continuous look for multi-day spans
+      let span='',mark='';
+      if(isMulti(w)){
+        const start=ds===w.date, end=ds===endOf(w);
+        span=start?' span-start':end?' span-end':' span-mid';
+        mark=start?'▶ ':'';
+      }
+      const tent=w.status==='tentative'?' tent':'';
+      const label=(isMulti(w)&&ds!==w.date)?'&nbsp;':escapeHtml(w.couple);
+      return `<div class="cal-ev${span}${tent}" style="--ec:${col}" onclick="event.stopPropagation();openForm('${w.id}')" title="${escapeHtml(w.couple)} · ${escapeHtml(type)} (${dateLabel(w)})">${mark}${label}</div>`;
+    }).join('')+(extra>0?`<div class="cal-more" onclick="event.stopPropagation();switchView('bookings')">+${extra} more</div>`:'');
+    const cls=`cal-cell${isToday?' today':''}${evs.length?' booked':''}${!evs.length&&canBook?' free':''}`;
+    const click=(!evs.length&&canBook)?` onclick="openForm('',\'${ds}\')" title="Book ${ds}"`:'';
+    html+=`<div class="${cls}"${click}><div class="cal-day">${d}${isToday?'<span class="cal-dot"></span>':''}</div>${pills}</div>`;
   }
   document.getElementById('calGrid').innerHTML=html;
+  const leg=document.getElementById('calLegend');
+  const entries=Object.entries(typesSeen);
+  leg.innerHTML=entries.length?entries.map(([t,c])=>`<span class="cal-leg"><i style="background:${c}"></i>${escapeHtml(t)}</span>`).join('')+'<span class="cal-leg"><i class="lg-tent"></i>tentative (striped)</span>':'<span class="muted" style="font-size:12px">No events this month'+(canBook?' — tap any free day to book it.':'.')+'</span>';
 }
 
 /* ---------- backup / restore ---------- */
