@@ -1555,6 +1555,12 @@ function deleteBooking(){
 /* ---------- calendar ---------- */
 function calMove(n){calRef.setMonth(calRef.getMonth()+n);renderCalendar()}
 const CAL_PALETTE=['#5d7d4f','#c79a3e','#b3674e','#6a7b9b','#8a6d9b','#3f8f7d','#a8743f','#7a8c4a'];
+// Assign each distinct event type its own colour (stable, alphabetical) so
+// types in use never collide — falls back to a hash beyond the palette size.
+function typeColorMap(){
+  const types=[...new Set(weds().map(w=>w.eventType||'Event'))].sort();
+  const m={};types.forEach((t,i)=>{m[t]=CAL_PALETTE[i%CAL_PALETTE.length];});return m;
+}
 function evColor(t){let h=0;const s=(t||'Event').toLowerCase();for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))>>>0;return CAL_PALETTE[h%CAL_PALETTE.length];}
 function renderCalendar(){
   const y=calRef.getFullYear(),m=calRef.getMonth();
@@ -1563,6 +1569,7 @@ function renderCalendar(){
   const days=new Date(y,m+1,0).getDate();
   const today=todayStr();
   const canBook=isManager();
+  const TC=typeColorMap();
   const typesSeen={};
   let html=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d=>`<div class="cal-dow">${d}</div>`).join('');
   for(let i=0;i<first;i++)html+='<div class="cal-cell empty"></div>';
@@ -1572,8 +1579,8 @@ function renderCalendar(){
     const isToday=ds===today;
     const shown=evs.slice(0,3), extra=evs.length-shown.length;
     const pills=shown.map(w=>{
-      const type=w.eventType||'Event'; typesSeen[type]=evColor(type);
-      const col=w.status==='done'?'#9b9b93':evColor(type);
+      const type=w.eventType||'Event'; const tcol=TC[type]||evColor(type); typesSeen[type]=tcol;
+      const col=w.status==='done'?'#9b9b93':tcol;
       // continuous look for multi-day spans
       let span='',mark='';
       if(isMulti(w)){
