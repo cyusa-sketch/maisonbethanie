@@ -1156,7 +1156,7 @@ function renderInsights(){
   const curKey0=today.slice(0,7);
   const rentAll=rentals().reduce((a,r)=>a+(r.payments||[]).reduce((x,p)=>x+(+p.amount||0),0),0);
   const rentMonth=rentals().reduce((a,r)=>a+rentPaidFor(r,curKey0),0);
-  if(!pays.length&&!rentAll){el.innerHTML='<div class="empty"><div class="big">💸</div>No payments recorded yet.<br><span class="muted">Add payments to bookings (or record rent) and your money insights will appear here.</span></div>';document.getElementById('insRange').textContent='';return;}
+  if(!pays.length&&!rentAll&&!(expDeptTotal('venue')+expDeptTotal('apartments'))){el.innerHTML='<div class="empty"><div class="big">💸</div>No payments recorded yet.<br><span class="muted">Add payments to bookings (or record rent) and your money insights will appear here.</span></div>';document.getElementById('insRange').textContent='';return;}
 
   const curKey=today.slice(0,7);
   const lm=new Date(now.getFullYear(),now.getMonth()-1,1);
