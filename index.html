@@ -374,6 +374,7 @@
     .topsearch{flex:1 1 90px;min-width:0;padding:8px 12px}
     .round{width:38px;height:38px;font-size:15px}
     .top-actions .round.light[title="Backup"],.top-actions .round.light[title="Restore"]{display:none}
+    #refreshBtn,#themeBtn,#roleBadge{display:none}
     #cloudStatus{display:none}
     #installBtn{font-size:0;padding:9px 11px}
     .tiles{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
@@ -608,6 +609,8 @@
   <div class="side-label">Finance</div>
   <button class="navitem" data-view="expenses"><span class="ic"><svg viewBox="0 0 24 24"><path d="M3 6h18v12H3z"/><path d="M3 10h18"/><circle cx="17" cy="14" r="1.4" fill="currentColor" stroke="none"/></svg></span><span class="lbl">Expenses &amp; Profit</span></button>
   <div class="side-label">Tools</div>
+  <button class="navitem" onclick="refreshNow()"><span class="ic"><svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg></span><span class="lbl">Refresh</span></button>
+  <button class="navitem" onclick="toggleTheme()"><span class="ic"><svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></span><span class="lbl">Dark mode</span></button>
   <button class="navitem" onclick="exportData()"><span class="ic"><svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg></span><span class="lbl">Backup</span></button>
   <button class="navitem mgr-only" onclick="document.getElementById('importFile').click()"><span class="ic"><svg viewBox="0 0 24 24"><path d="M12 21V9"/><path d="M7 14l5-5 5 5"/><path d="M5 3h14"/></svg></span><span class="lbl">Restore</span></button>
   <button class="navitem" onclick="lockApp()"><span class="ic"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span><span class="lbl">Lock</span></button>
@@ -760,6 +763,7 @@
           <div class="panel-head">
             <h2>🧾 Expenses</h2>
             <div style="display:flex;gap:8px;align-items:center">
+              <select id="expMonth" onchange="renderExpenses()"><option value="all">All time</option></select>
               <select id="expFilter" onchange="renderExpenses()">
                 <option value="all">All departments</option>
                 <option value="venue">🎪 Venue</option>
@@ -1757,16 +1761,34 @@ function deleteTenant(){
 
 /* ================= EXPENSES & PROFIT ================= */
 function renderExpenses(){
-  const vInc=weddingIncome(), aInc=rentIncome();
-  const vExp=expDeptTotal('venue'), aExp=expDeptTotal('apartments');
+  // Build the month dropdown from every payment/expense date on record.
+  const monthSel=document.getElementById('expMonth');
+  if(monthSel){
+    const months=new Set();
+    weds().forEach(w=>(w.payments||[]).forEach(p=>{if(p.date)months.add(p.date.slice(0,7));}));
+    rentals().forEach(r=>(r.payments||[]).forEach(p=>{if(p.date)months.add(p.date.slice(0,7));}));
+    expensesList().forEach(e=>{if(e.date)months.add(e.date.slice(0,7));});
+    const cur=monthSel.value;
+    const ordered=[...months].sort().reverse();
+    monthSel.innerHTML='<option value="all">All time</option>'+ordered.map(m=>`<option value="${m}">${monthName(m)}</option>`).join('');
+    monthSel.value=ordered.includes(cur)||cur==='all'?cur:'all';
+  }
+  const mo=monthSel?monthSel.value:'all';
+  const inMonth=d=>mo==='all'||(d||'').slice(0,7)===mo;
+  // Income (scoped to the chosen month if one is picked).
+  const payOf=arr=>arr.filter(w=>w.status!=='cancelled').reduce((a,w)=>a+(w.payments||[]).filter(p=>inMonth(p.date)).reduce((x,p)=>x+(+p.amount||0),0),0);
+  const vInc=payOf(weds()), aInc=payOf(rentals());
+  const expOf=dept=>expensesList().filter(e=>e.dept===dept&&inMonth(e.date)).reduce((a,e)=>a+(+e.amount||0),0);
+  const vExp=expOf('venue'), aExp=expOf('apartments');
   const vProfit=vInc-vExp, aProfit=aInc-aExp, tProfit=(vInc+aInc)-(vExp+aExp);
+  const scope=mo==='all'?'all departments':monthName(mo);
   const pc=document.getElementById('profitCards'); if(pc)pc.innerHTML='<div class="cards">'+
     `<div class="stat"><div class="label">🎪 Venue profit</div><div class="value ${vProfit<0?'red':'green'}" style="font-size:20px">${fmtMoney(vProfit)}</div><div class="sub">${fmtMoney(vInc)} in · ${fmtMoney(vExp)} out</div></div>`+
     `<div class="stat"><div class="label">🏠 Apartments profit</div><div class="value ${aProfit<0?'red':'green'}" style="font-size:20px">${fmtMoney(aProfit)}</div><div class="sub">${fmtMoney(aInc)} in · ${fmtMoney(aExp)} out</div></div>`+
-    `<div class="stat"><div class="label">🏦 Total net profit</div><div class="value ${tProfit<0?'red':'gold'}" style="font-size:20px">${fmtMoney(tProfit)}</div><div class="sub">all departments</div></div>`+
+    `<div class="stat"><div class="label">🏦 Total net profit</div><div class="value ${tProfit<0?'red':'gold'}" style="font-size:20px">${fmtMoney(tProfit)}</div><div class="sub">${scope}</div></div>`+
     '</div>';
   const f=document.getElementById('expFilter').value;
-  let list=expensesList().filter(e=>f==='all'||e.dept===f).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  let list=expensesList().filter(e=>(f==='all'||e.dept===f)&&inMonth(e.date)).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
   const el=document.getElementById('expensesTable');
   if(!list.length){el.innerHTML='<div class="empty"><div class="big">🧾</div>No expenses recorded yet.<br><span class="muted mgr-only">Tap “+ Add expense” to record one.</span></div>';return;}
   const tot=list.reduce((a,e)=>a+(+e.amount||0),0);
